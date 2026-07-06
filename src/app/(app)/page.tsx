@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { assets, customers, insurancePolicies, loans, transactions } from "@/db/schema";
+import { applications, assets, customers, insurancePolicies, loans, transactions } from "@/db/schema";
 import { formatDate, formatMoney, todaySydney } from "@/lib/format";
 import { PageHeader, Section, Badge } from "@/components/ui";
 
 function StatCard({ label, value, href, alert }: { label: string; value: string; href: string; alert?: boolean }) {
   return (
-    <Link href={href} className="card block p-4 hover:border-amber-400">
+    <Link href={href} className="card block p-4 hover:border-ygg-400">
       <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
       <div className={`mt-1 text-2xl font-bold tabular-nums ${alert ? "text-red-600" : "text-slate-900"}`}>
         {value}
@@ -25,6 +25,12 @@ export default async function DashboardPage() {
     await db.select({ id: customers.id }).from(customers).where(eq(customers.status, "active"))
   ).length;
   const activeAssets = (await db.select({ id: assets.id }).from(assets).where(eq(assets.status, "active"))).length;
+  const openApplications = (
+    await db
+      .select({ id: applications.id })
+      .from(applications)
+      .where(inArray(applications.status, ["draft", "in_progress", "approved"]))
+  ).length;
 
   const [portfolio] = await db
     // sum() over integers is bigint in Postgres — cast so the driver returns a number
@@ -61,7 +67,8 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader title="Dashboard" subtitle="Portfolio snapshot" />
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-6">
+        <StatCard label="Open applications" value={String(openApplications)} href="/applications" />
         <StatCard label="Active loans" value={String(activeLoans)} href="/loans" />
         <StatCard label="In arrears" value={String(arrearsLoans)} href="/loans" alert={arrearsLoans > 0} />
         <StatCard label="Active customers" value={String(activeCustomers)} href="/customers" />
@@ -79,7 +86,7 @@ export default async function DashboardPage() {
               <Link
                 key={txn.id}
                 href={`/loans/${loan.id}`}
-                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-amber-50"
+                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-ygg-50"
               >
                 <span className="w-24 shrink-0 tabular-nums text-slate-500">{formatDate(txn.date)}</span>
                 <span className="w-32 shrink-0 font-medium">{loan.contractNumber}</span>
@@ -107,7 +114,7 @@ export default async function DashboardPage() {
               <Link
                 key={policy.id}
                 href={`/customers/${customer.id}`}
-                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-amber-50"
+                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-ygg-50"
               >
                 <span className="w-24 shrink-0 tabular-nums text-slate-500">
                   {formatDate(policy.expiryDate)}

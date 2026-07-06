@@ -7,6 +7,7 @@ import * as t from "./schema";
 import { auditedInsert, type Actor } from "./mutate";
 import { hashPassword } from "../lib/password";
 import { isValidAbn, isValidAcn } from "../lib/abn";
+import { DEFAULT_CHECKLIST } from "../lib/checklist";
 
 const SEED_ACTOR: Actor = { id: null, name: "System (seed)" };
 const now = () => new Date().toISOString();
@@ -587,6 +588,100 @@ for (const deal of deals) {
         createdAt: now(),
       });
     }
+  }
+
+  // Completed checklists behind each converted application.
+  for (const item of DEFAULT_CHECKLIST) {
+    await insert(t.applicationChecklistItems, "application_checklist_item", {
+      applicationId: application.id,
+      key: item.key,
+      label: item.label,
+      status: "done",
+      completedBy: credit.id,
+      completedAt: now(),
+    });
+  }
+}
+
+// --- Open applications in the originations pipeline ---------------------------
+
+const openApplicationSeeds = [
+  {
+    customerIdx: 9, // Derwent Valley Logging — no current facility
+    status: "in_progress" as const,
+    brokerIdx: 2,
+    dealValue: 152000,
+    rr: "2.85",
+    roi: "12.90",
+    termMonths: 48,
+    asset: {
+      description: "2024 Tigercat 632H Skidder",
+      category: "Skidder",
+      serial: "TC632H-20419",
+      value: 152000,
+    },
+  },
+  {
+    customerIdx: 7, // Kalgoorlie Drilling — previous facility paid out, ready to convert
+    status: "approved" as const,
+    brokerIdx: 0,
+    dealValue: 118000,
+    rr: "3.05",
+    roi: "13.40",
+    termMonths: 36,
+    asset: {
+      description: "2023 Atlas Copco XAS 188 Air Compressor Package",
+      category: "Compressor",
+      serial: "AC-XAS188-55102",
+      value: 118000,
+    },
+  },
+];
+
+for (const seed of openApplicationSeeds) {
+  const customer = customers[seed.customerIdx];
+  const application = await insert<{ id: number }>(t.applications, "application", {
+    reference: `APP-2026-${String(appSeq++).padStart(4, "0")}`,
+    customerId: customer.id,
+    status: seed.status,
+    source: "broker",
+    brokerId: brokers[seed.brokerIdx].id,
+    ownerId: credit.id,
+    dealValueExGstCents: seed.dealValue * 100,
+    rentalRatePercent: seed.rr,
+    roiPercent: seed.roi,
+    termMonths: seed.termMonths,
+    brokerageExGstCents: Math.round(seed.dealValue * 0.03) * 100,
+    createdAt: now(),
+    updatedAt: now(),
+  });
+  const asset = await insert<{ id: number }>(t.assets, "asset", {
+    description: seed.asset.description,
+    category: seed.asset.category,
+    serialNumber: seed.asset.serial,
+    valueExGstCents: seed.asset.value * 100,
+    status: "active",
+    customerId: customer.id,
+    loanId: null,
+    createdAt: now(),
+    updatedAt: now(),
+  });
+  await insert(t.applicationAssets, "application_asset", {
+    applicationId: application.id,
+    assetId: asset.id,
+  });
+  for (const item of DEFAULT_CHECKLIST) {
+    // The approved application has its checks done; the in-progress one is mid-flight.
+    const done = seed.status === "approved" || ["id_matrix", "credit_check"].includes(item.key);
+    await insert(t.applicationChecklistItems, "application_checklist_item", {
+      applicationId: application.id,
+      key: item.key,
+      label: item.label,
+      status: done ? "done" : "pending",
+      completedBy: done ? credit.id : null,
+      completedAt: done ? now() : null,
+      notes: done && item.stub ? `${item.stub} check completed (stub)` : null,
+    });
   }
 }
 

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#ffc72c"/>
+  <!-- stylised gate -->
+  <g stroke="#1e293b" stroke-width="5" stroke-linecap="round">
+    <line x1="14" y1="50" x2="14" y2="18"/>
+    <line x1="50" y1="50" x2="50" y2="18"/>
+    <line x1="32" y1="50" x2="32" y2="26"/>
+    <line x1="23" y1="50" x2="23" y2="22"/>
+    <line x1="41" y1="50" x2="41" y2="22"/>
+    <path d="M14 18 Q32 8 50 18" fill="none"/>
+  </g>
+</svg>

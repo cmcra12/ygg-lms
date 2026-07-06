@@ -2,7 +2,7 @@
   "name": "ygg-lms",
   "version": "0.1.0",
   "private": true,
-  "description": "YGG Loan Management System \u2014 internal rental facility management for Yellowgate Group",
+  "description": "YGG Loan Management System — internal rental facility management for Yellowgate Group",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -16,8 +16,10 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
     "bcryptjs": "^3.0.3",
+    "docxtemplater": "^3.69.0",
     "drizzle-orm": "^0.45.2",
     "next": "^15.5.20",
+    "pizzip": "^3.2.0",
     "postgres": "^3.4.9",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

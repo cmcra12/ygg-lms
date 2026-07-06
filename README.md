@@ -5,10 +5,18 @@ finPOWER Connect that does exactly what YGG uses and nothing more. Rental-only a
 finance: the ledger is scheduled recurring charges (RENT, DAMAGE WAIVER, …) versus
 receipts. No interest accrual, no amortisation, no payout-figure engine.
 
-**This is Phase 1 (Foundation)** of the four-phase plan: scaffold, schema, auth + RBAC,
-automatic audit trail, global search, customers (contacts + insurance), external
-parties, master asset register, loans with read-only ledger, payment history
-drilldown, dashboard, seed data and CSV export everywhere.
+**Phases 1 and 2 of the four-phase plan are built.**
+
+- *Phase 1 — Foundation:* scaffold, schema, auth + RBAC, automatic audit trail,
+  global search, customers (contacts + insurance), external parties, master asset
+  register, loans with read-only ledger, payment history drilldown, dashboard,
+  seed data and CSV export everywhere.
+- *Phase 2 — Originations:* applications with the deal snapshot (value, RR, ROI,
+  term, brokerage), originations checklist with stubbed credit check / Info Agent /
+  ID verification / PPSR search (each with a manual mark-done fallback), credit
+  approval and rental contract generation from editable `.docx` templates
+  (`templates/` — see its README for placeholders), and approved-application →
+  loan account conversion with PMSI registration.
 
 ## Setup (local development)
 
@@ -183,10 +191,11 @@ credentials.
 
 ## Phase plan
 
-- **Phase 1 — Foundation** (this): everything described above.
-- **Phase 2 — Originations**: application form + checklist workflow, stubbed credit
-  check / Info Agent / ID matrix, CA + contract generation from `.docx` templates
-  (docxtemplater + pizzip), PPSR search stub, application → loan conversion, PMSI registration.
+- **Phase 1 — Foundation**: ✅ built.
+- **Phase 2 — Originations**: ✅ built — application form + checklist workflow,
+  stubbed credit check / Info Agent / ID matrix, CA + contract generation from
+  `.docx` templates (docxtemplater + pizzip), PPSR search stub, application →
+  loan conversion, PMSI registration.
 - **Phase 3 — Money**: transaction entry, recurring schedule engine, upfronts via
   Xero stub, Zepto DDR capture, dishonour fee + arrears flag flow.
 - **Phase 4 — Lifecycle & reporting**: PPSR discharge/renew, asset transitions and

@@ -115,7 +115,7 @@ export function ExternalPartyForm({
             name="paidBefore"
             type="checkbox"
             defaultChecked={initial.paidBefore ?? false}
-            className="h-4 w-4 accent-amber-500"
+            className="h-4 w-4 accent-ygg-400"
           />
           <label htmlFor="paidBefore" className="text-sm text-slate-700">
             Has been paid before

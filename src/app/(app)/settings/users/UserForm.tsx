@@ -56,7 +56,7 @@ export function UserForm({
             name="active"
             type="checkbox"
             defaultChecked={initial.active ?? true}
-            className="h-4 w-4 accent-amber-500"
+            className="h-4 w-4 accent-ygg-400"
           />
           <label htmlFor="active" className="text-sm text-slate-700">
             Active (can sign in)

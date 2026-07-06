@@ -162,7 +162,7 @@ export function DataTable({
             {visible.map((row, i) => (
               <tr
                 key={i}
-                className={`border-b border-slate-100 last:border-0 ${row.href ? "cursor-pointer hover:bg-amber-50" : ""}`}
+                className={`border-b border-slate-100 last:border-0 ${row.href ? "cursor-pointer hover:bg-ygg-50" : ""}`}
                 onClick={row.href ? () => router.push(row.href!) : undefined}
               >
                 {columns.map((c) => {

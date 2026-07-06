@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "YGG Loan Management",
+  title: "Yellowgate LMS",
   description: "Yellowgate Group internal loan management system",
 };
 

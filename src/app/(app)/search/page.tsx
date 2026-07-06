@@ -7,6 +7,7 @@ const KIND_LABEL: Record<string, { label: string; color: "blue" | "green" | "amb
   contact: { label: "Contact", color: "green" },
   asset: { label: "Asset", color: "amber" },
   loan: { label: "Loan", color: "slate" },
+  application: { label: "Application", color: "amber" },
 };
 
 export default async function SearchPage({
@@ -28,7 +29,7 @@ export default async function SearchPage({
           <div className="px-4 py-8 text-center text-sm text-slate-400">No matches.</div>
         )}
         {results.map((r, i) => (
-          <Link key={i} href={r.href} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-amber-50">
+          <Link key={i} href={r.href} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-ygg-50">
             <span className="w-20 shrink-0">
               <Badge color={KIND_LABEL[r.kind].color}>{KIND_LABEL[r.kind].label}</Badge>
             </span>

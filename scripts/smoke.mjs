@@ -95,6 +95,45 @@ await page.click('main button[type="submit"]');
 await page.waitForSelector("text=checksum", { timeout: 10000 });
 check("ABN validation", true);
 
+// Applications list + detail
+await page.goto(BASE + "/applications");
+const appsList = await page.textContent("body");
+check("applications list", appsList.includes("APP-2026-") && appsList.includes("In Progress"));
+await page.click("text=APP-2026-0010");
+await page.waitForURL(/\/applications\/\d+$/);
+const appDetail = await page.textContent("body");
+check(
+  "application detail",
+  appDetail.includes("Originations checklist") && appDetail.includes("Deal snapshot"),
+);
+
+// Stubbed integration run: Info Agent lookup marks its checklist item done
+await page.click("text=Run Info Agent lookup (stub)");
+await page.waitForSelector("text=Company status: Registered", { timeout: 15000 });
+check("info agent stub run", true);
+
+// Document generation downloads a .docx and records it
+const appUrl = page.url();
+const docResponse = await page.request.get(appUrl + "/documents/credit-approval");
+check(
+  "generate CA docx",
+  docResponse.ok() &&
+    (docResponse.headers()["content-type"] ?? "").includes("wordprocessingml"),
+  String(docResponse.status()),
+);
+await page.reload();
+check("CA recorded on application", (await page.textContent("body")).includes("CA-APP-2026-"));
+
+// Convert the approved application into a loan account
+await page.goto(BASE + "/applications");
+await page.click("text=APP-2026-0011");
+await page.waitForURL(/\/applications\/\d+$/);
+await page.click('button:has-text("Open loan account")');
+await page.waitForURL(/\/loans\/\d+$/, { timeout: 20000 });
+const newLoan = await page.textContent("body");
+check("convert to loan", newLoan.includes("YGG-000") && newLoan.includes("Assets on this loan"));
+check("PMSI registered on convert", newLoan.includes("Atlas Copco"));
+
 // RBAC: operations user doesn't get the Staff admin link
 const ctx2 = await browser.newContext();
 const p2 = await ctx2.newPage();

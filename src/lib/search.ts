@@ -1,9 +1,9 @@
 import { like, or, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { assets, customerContacts, customers, loans } from "@/db/schema";
+import { applications, assets, customerContacts, customers, loans } from "@/db/schema";
 
 export type SearchResult = {
-  kind: "customer" | "contact" | "asset" | "loan";
+  kind: "customer" | "contact" | "asset" | "loan" | "application";
   title: string;
   subtitle: string;
   href: string;
@@ -53,6 +53,13 @@ export async function globalSearch(term: string, limit = 10): Promise<SearchResu
     .limit(limit)
     ;
 
+  const applicationRows = await db
+    .select({ application: applications, customer: customers })
+    .from(applications)
+    .innerJoin(customers, eq(applications.customerId, customers.id))
+    .where(like(applications.reference, q))
+    .limit(limit);
+
   return [
     ...customerRows.map((c) => ({
       kind: "customer" as const,
@@ -79,6 +86,12 @@ export async function globalSearch(term: string, limit = 10): Promise<SearchResu
       title: loan.contractNumber,
       subtitle: `Loan for ${customer.name} · ${loan.status.replace("_", " ")}`,
       href: `/loans/${loan.id}`,
+    })),
+    ...applicationRows.map(({ application, customer }) => ({
+      kind: "application" as const,
+      title: application.reference,
+      subtitle: `Application for ${customer.name} · ${application.status.replace("_", " ")}`,
+      href: `/applications/${application.id}`,
     })),
   ];
 }

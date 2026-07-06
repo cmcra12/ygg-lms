@@ -125,7 +125,7 @@ export default async function CustomerDetailPage({
               <span className="flex shrink-0 items-center gap-2">
                 <Link
                   href={`/customers/${customer.id}/contacts/${c.id}/edit`}
-                  className="text-xs text-amber-700 underline"
+                  className="text-xs text-ygg-700 underline"
                 >
                   Edit
                 </Link>
@@ -167,7 +167,7 @@ export default async function CustomerDetailPage({
               <span className="flex shrink-0 items-center gap-2">
                 <Link
                   href={`/customers/${customer.id}/insurance/${p.id}/edit`}
-                  className="text-xs text-amber-700 underline"
+                  className="text-xs text-ygg-700 underline"
                 >
                   Edit
                 </Link>
@@ -192,7 +192,7 @@ export default async function CustomerDetailPage({
             <Link
               key={l.id}
               href={`/loans/${l.id}`}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-amber-50"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-ygg-50"
             >
               <span className="w-32 shrink-0 font-medium">{l.contractNumber}</span>
               <span className="w-40 shrink-0 text-slate-600">
@@ -219,7 +219,7 @@ export default async function CustomerDetailPage({
             <Link
               key={a.id}
               href={`/assets/${a.id}`}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-amber-50"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-ygg-50"
             >
               <span className="min-w-0 flex-1 truncate font-medium">{a.description}</span>
               <span className="w-32 shrink-0 text-slate-600">{a.rego ? `Rego ${a.rego}` : ""}</span>

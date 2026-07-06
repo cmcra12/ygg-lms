@@ -58,7 +58,7 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
         title={loan.contractNumber}
         subtitle={
           <>
-            <Link href={`/customers/${customer.id}`} className="text-amber-700 underline">
+            <Link href={`/customers/${customer.id}`} className="text-ygg-700 underline">
               {customer.name}
             </Link>{" "}
             <Badge color={loan.status === "active" ? "green" : loan.status === "paid_out" ? "slate" : "red"}>
@@ -118,7 +118,7 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
             <Link
               key={a.id}
               href={`/assets/${a.id}`}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-amber-50"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-ygg-50"
             >
               <span className="min-w-0 flex-1 truncate font-medium">{a.description}</span>
               <span className="w-40 shrink-0 text-slate-600">

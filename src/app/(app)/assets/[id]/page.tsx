@@ -70,7 +70,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
             [
               "Current customer",
               customer ? (
-                <Link href={`/customers/${customer.id}`} className="text-amber-700 underline">
+                <Link href={`/customers/${customer.id}`} className="text-ygg-700 underline">
                   {customer.name}
                 </Link>
               ) : (
@@ -80,7 +80,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
             [
               "Current loan",
               loan ? (
-                <Link href={`/loans/${loan.id}`} className="text-amber-700 underline">
+                <Link href={`/loans/${loan.id}`} className="text-ygg-700 underline">
                   {loan.contractNumber}
                 </Link>
               ) : (

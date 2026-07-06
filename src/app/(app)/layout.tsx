@@ -5,6 +5,7 @@ import { logout } from "@/app/login/actions";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
+  { href: "/applications", label: "Applications" },
   { href: "/customers", label: "Customers" },
   { href: "/loans", label: "Loans" },
   { href: "/assets", label: "Asset register" },
@@ -16,8 +17,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 bg-slate-900 text-slate-300">
-        <Link href="/" className="px-5 py-4 text-lg font-black tracking-tight text-white">
-          <span className="text-amber-400">YGG</span> LMS
+        <Link href="/" className="block px-5 py-4">
+          <span className="block text-base font-black uppercase tracking-widest text-ygg-400">
+            Yellowgate
+          </span>
+          <span className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            Loan Management
+          </span>
         </Link>
         <nav className="flex-1 space-y-0.5 px-2">
           {NAV.map((item) => (
