@@ -82,13 +82,12 @@ END $$;
 
   // 2. Drizzle migration bookkeeping, copied from the local database so that
   //    future `npm run db:migrate` runs skip what this file already applied.
-  const bookkeeping = await db.execute(
+  type MigrationRow = { hash: string; created_at: string | number };
+  // postgres-js returns the rows array directly; PGlite wraps them in {rows}.
+  const bookkeeping = (await db.execute(
     sql`select hash, created_at from drizzle.__drizzle_migrations order by id`,
-  );
-  const migrationRows = (Array.isArray(bookkeeping) ? bookkeeping : bookkeeping.rows) as Array<{
-    hash: string;
-    created_at: string | number;
-  }>;
+  )) as unknown as MigrationRow[] | { rows: MigrationRow[] };
+  const migrationRows = Array.isArray(bookkeeping) ? bookkeeping : bookkeeping.rows;
   parts.push(`-- === drizzle migration bookkeeping ===
 CREATE SCHEMA IF NOT EXISTS "drizzle";
 CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
