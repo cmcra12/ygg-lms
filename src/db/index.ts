@@ -19,9 +19,22 @@ const globalForDb = globalThis as unknown as {
 function createDb(): { db: Db; close: () => Promise<void> } {
   const url = process.env.DATABASE_URL;
   if (url) {
+    if (url.includes("[YOUR-PASSWORD]") || url.includes("YOUR-PASSWORD")) {
+      throw new Error(
+        "DATABASE_URL still contains the [YOUR-PASSWORD] placeholder — replace it with the database password you chose when creating the Supabase project.",
+      );
+    }
     // prepare:false keeps this compatible with Supabase's transaction pooler.
     const client = postgres(url, { prepare: false });
     return { db: drizzlePostgres(client, { schema }), close: () => client.end() };
+  }
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    // Without DATABASE_URL we'd fall back to the embedded local database,
+    // which is wrong (and read-only) on serverless hosts — fail with a clear
+    // message instead of a cryptic filesystem error.
+    throw new Error(
+      "DATABASE_URL is not set. Add it in your host's environment variables (Vercel: Project → Settings → Environment Variables) and redeploy.",
+    );
   }
   const dataDir = process.env.PGLITE_PATH ?? "data/pgdata";
   fs.mkdirSync(dataDir, { recursive: true });
