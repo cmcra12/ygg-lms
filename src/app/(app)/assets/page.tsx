@@ -7,13 +7,13 @@ import { DataTable } from "@/components/DataTable";
 
 // Master asset register — spreadsheet-style, filterable, exportable.
 export default async function AssetsPage() {
-  const rows = db
+  const rows = await db
     .select({ asset: assets, customer: customers, loan: loans })
     .from(assets)
     .leftJoin(customers, eq(assets.customerId, customers.id))
     .leftJoin(loans, eq(assets.loanId, loans.id))
     .orderBy(asc(assets.description))
-    .all();
+    ;
 
   return (
     <>

@@ -7,6 +7,8 @@ import { cache } from "react";
 import { db } from "@/db";
 import { sessions, users } from "@/db/schema";
 
+export { hashPassword, verifyPassword } from "./password";
+
 export const SESSION_COOKIE = "ygg_session";
 const SESSION_DAYS = 7;
 
@@ -17,19 +19,15 @@ export type SessionUser = {
   role: "admin" | "credit" | "operations";
 };
 
-export { hashPassword, verifyPassword } from "./password";
-
 export async function createSession(userId: number) {
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  db.insert(sessions)
-    .values({
-      id: token,
-      userId,
-      expiresAt: expiresAt.toISOString(),
-      createdAt: new Date().toISOString(),
-    })
-    .run();
+  await db.insert(sessions).values({
+    id: token,
+    userId,
+    expiresAt: expiresAt.toISOString(),
+    createdAt: new Date().toISOString(),
+  });
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -43,7 +41,7 @@ export async function createSession(userId: number) {
 export async function destroySession() {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
-  if (token) db.delete(sessions).where(eq(sessions.id, token)).run();
+  if (token) await db.delete(sessions).where(eq(sessions.id, token));
   jar.delete(SESSION_COOKIE);
 }
 
@@ -51,7 +49,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const rows = db
+  const rows = await db
     .select({
       id: users.id,
       name: users.name,
@@ -66,8 +64,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
         gt(sessions.expiresAt, new Date().toISOString()),
         eq(users.active, true),
       ),
-    )
-    .all();
+    );
   return rows[0] ?? null;
 });
 

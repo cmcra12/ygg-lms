@@ -56,13 +56,13 @@ export async function saveExternalParty(
 
   let id = partyId;
   if (id == null) {
-    const row = auditedInsert<{ id: number }>(user, externalParties, "external_party", {
+    const row = await auditedInsert<{ id: number }>(user, externalParties, "external_party", {
       ...values,
       createdAt: now,
     });
     id = row.id;
   } else {
-    auditedUpdate(user, externalParties, "external_party", id, values);
+    await auditedUpdate(user, externalParties, "external_party", id, values);
   }
   revalidatePath("/external-parties");
   redirect(`/external-parties/${id}`);

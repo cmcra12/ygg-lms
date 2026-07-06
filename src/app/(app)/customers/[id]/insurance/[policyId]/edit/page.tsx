@@ -13,12 +13,12 @@ export default async function EditPolicyPage({
 }) {
   const { id, policyId } = await params;
   const customerId = Number(id);
-  const [customer] = db.select().from(customers).where(eq(customers.id, customerId)).all();
-  const [policy] = db
+  const [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
+  const [policy] = await db
     .select()
     .from(insurancePolicies)
     .where(and(eq(insurancePolicies.id, Number(policyId)), eq(insurancePolicies.customerId, customerId)))
-    .all();
+    ;
   if (!customer || !policy) notFound();
 
   return (

@@ -13,15 +13,15 @@ export default async function EditExternalPartyPage({
 }) {
   const { id } = await params;
   const partyId = Number(id);
-  const [party] = db.select().from(externalParties).where(eq(externalParties.id, partyId)).all();
+  const [party] = await db.select().from(externalParties).where(eq(externalParties.id, partyId));
   if (!party) notFound();
 
-  const aggregators = db
+  const aggregators = await db
     .select({ id: externalParties.id, name: externalParties.name })
     .from(externalParties)
     .where(and(eq(externalParties.type, "aggregator"), ne(externalParties.id, partyId)))
     .orderBy(asc(externalParties.name))
-    .all();
+    ;
 
   return (
     <>

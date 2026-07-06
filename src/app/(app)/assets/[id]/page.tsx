@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { assets, customers, loans, ppsrEvents, ppsrRegistrations } from "@/db/schema";
 import { formatDate, formatMoney, titleCase } from "@/lib/format";
@@ -17,20 +17,35 @@ const PPSR_BADGE: Record<string, "green" | "red" | "amber" | "slate"> = {
 export default async function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const assetId = Number(id);
-  const [asset] = db.select().from(assets).where(eq(assets.id, assetId)).all();
+  const [asset] = await db.select().from(assets).where(eq(assets.id, assetId));
   if (!asset) notFound();
 
   const [customer] = asset.customerId
-    ? db.select().from(customers).where(eq(customers.id, asset.customerId)).all()
+    ? await db.select().from(customers).where(eq(customers.id, asset.customerId))
     : [];
-  const [loan] = asset.loanId ? db.select().from(loans).where(eq(loans.id, asset.loanId)).all() : [];
+  const [loan] = asset.loanId ? await db.select().from(loans).where(eq(loans.id, asset.loanId)) : [];
 
-  const registrations = db
+  const registrations = await db
     .select()
     .from(ppsrRegistrations)
     .where(eq(ppsrRegistrations.assetId, assetId))
     .orderBy(desc(ppsrRegistrations.id))
-    .all();
+    ;
+
+  const allEvents =
+    registrations.length === 0
+      ? []
+      : await db
+          .select()
+          .from(ppsrEvents)
+          .where(inArray(ppsrEvents.registrationId, registrations.map((r) => r.id)))
+          .orderBy(desc(ppsrEvents.date));
+  const eventsByRegistration = new Map<number, typeof allEvents>();
+  for (const e of allEvents) {
+    const list = eventsByRegistration.get(e.registrationId) ?? [];
+    list.push(e);
+    eventsByRegistration.set(e.registrationId, list);
+  }
 
   return (
     <>
@@ -85,12 +100,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
             </div>
           )}
           {registrations.map((r) => {
-            const events = db
-              .select()
-              .from(ppsrEvents)
-              .where(eq(ppsrEvents.registrationId, r.id))
-              .orderBy(desc(ppsrEvents.date))
-              .all();
+            const events = eventsByRegistration.get(r.id) ?? [];
             return (
               <div key={r.id} className="px-4 py-3 text-sm">
                 <div className="flex items-center gap-3">

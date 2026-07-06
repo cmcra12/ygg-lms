@@ -13,7 +13,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ userI
   assertCan(actor, "users:manage");
 
   const { userId } = await params;
-  const [user] = db.select().from(users).where(eq(users.id, Number(userId))).all();
+  const [user] = await db.select().from(users).where(eq(users.id, Number(userId)));
   if (!user) notFound();
 
   return (

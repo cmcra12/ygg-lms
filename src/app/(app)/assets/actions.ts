@@ -32,16 +32,16 @@ export async function saveAsset(
   const loanId = loanRaw ? Number(loanRaw) : null;
 
   if (loanId != null) {
-    const [loan] = db.select().from(loans).where(eq(loans.id, loanId)).all();
+    const [loan] = await db.select().from(loans).where(eq(loans.id, loanId));
     if (!loan) return { error: "Selected loan not found." };
     if (customerId != null && loan.customerId !== customerId) {
       return { error: "Selected loan belongs to a different customer." };
     }
     // Assets may only move to a different loan after the previous one finished.
     if (assetId != null) {
-      const [current] = db.select().from(assets).where(eq(assets.id, assetId)).all();
+      const [current] = await db.select().from(assets).where(eq(assets.id, assetId));
       if (current?.loanId && current.loanId !== loanId) {
-        const [previous] = db.select().from(loans).where(eq(loans.id, current.loanId)).all();
+        const [previous] = await db.select().from(loans).where(eq(loans.id, current.loanId));
         if (previous && previous.status === "active") {
           return {
             error: `Asset is attached to active loan ${previous.contractNumber} — it can only be reassigned once that loan has finished.`,
@@ -68,10 +68,10 @@ export async function saveAsset(
 
   let id = assetId;
   if (id == null) {
-    const row = auditedInsert<{ id: number }>(user, assets, "asset", { ...values, createdAt: now });
+    const row = await auditedInsert<{ id: number }>(user, assets, "asset", { ...values, createdAt: now });
     id = row.id;
   } else {
-    auditedUpdate(user, assets, "asset", id, values);
+    await auditedUpdate(user, assets, "asset", id, values);
   }
   revalidatePath("/assets");
   redirect(`/assets/${id}`);

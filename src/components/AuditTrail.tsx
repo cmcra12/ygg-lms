@@ -23,14 +23,14 @@ const ACTION_LABEL: Record<string, string> = {
 };
 
 /** Per-entity audit history, shown on detail screens. */
-export function AuditTrail({ entityType, entityId }: { entityType: string; entityId: number }) {
-  const entries = db
+export async function AuditTrail({ entityType, entityId }: { entityType: string; entityId: number }) {
+  const entries = await db
     .select()
     .from(auditLog)
     .where(and(eq(auditLog.entityType, entityType), eq(auditLog.entityId, entityId)))
     .orderBy(desc(auditLog.id))
     .limit(50)
-    .all();
+    ;
 
   if (entries.length === 0) return null;
 

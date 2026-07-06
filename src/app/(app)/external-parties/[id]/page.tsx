@@ -14,12 +14,12 @@ export default async function ExternalPartyDetailPage({
 }) {
   const { id } = await params;
   const partyId = Number(id);
-  const [party] = db.select().from(externalParties).where(eq(externalParties.id, partyId)).all();
+  const [party] = await db.select().from(externalParties).where(eq(externalParties.id, partyId));
   if (!party) notFound();
 
   const aggregator =
     party.aggregatorId != null
-      ? db.select().from(externalParties).where(eq(externalParties.id, party.aggregatorId)).all()[0]
+      ? (await db.select().from(externalParties).where(eq(externalParties.id, party.aggregatorId)))[0]
       : undefined;
 
   return (

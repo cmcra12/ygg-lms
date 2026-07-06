@@ -9,20 +9,20 @@ import { saveAsset } from "../../actions";
 export default async function EditAssetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const assetId = Number(id);
-  const [asset] = db.select().from(assets).where(eq(assets.id, assetId)).all();
+  const [asset] = await db.select().from(assets).where(eq(assets.id, assetId));
   if (!asset) notFound();
 
-  const customerOptions = db
+  const customerOptions = await db
     .select({ id: customers.id, name: customers.name })
     .from(customers)
     .orderBy(asc(customers.name))
-    .all();
-  const loanOptions = db
+    ;
+  const loanOptions = await db
     .select({ id: loans.id, contractNumber: loans.contractNumber, customerName: customers.name })
     .from(loans)
     .innerJoin(customers, eq(loans.customerId, customers.id))
     .orderBy(asc(loans.contractNumber))
-    .all();
+    ;
 
   return (
     <>

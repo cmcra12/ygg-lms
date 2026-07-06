@@ -1,25 +1,46 @@
-import Database from "better-sqlite3";
-import { drizzle, BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import fs from "node:fs";
-import path from "node:path";
+import { drizzle as drizzlePostgres, PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
+import postgres from "postgres";
+import { PGlite } from "@electric-sql/pglite";
 import * as schema from "./schema";
 
-const DB_PATH = process.env.DATABASE_PATH ?? "data/ygg.db";
+// Postgres everywhere. With DATABASE_URL set (Supabase in production) we
+// connect over the wire; without it, PGlite runs an embedded Postgres that
+// persists to data/pgdata — so local dev needs zero setup and uses the exact
+// same dialect and migrations as production.
+export type Db = PostgresJsDatabase<typeof schema>;
 
-// Reuse the connection across Next.js hot reloads in dev.
 const globalForDb = globalThis as unknown as {
-  __yggDb?: BetterSQLite3Database<typeof schema>;
+  __yggDb?: Db;
+  __yggClose?: () => Promise<void>;
 };
 
-function createDb() {
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  const sqlite = new Database(DB_PATH);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
-  return drizzle(sqlite, { schema });
+function createDb(): { db: Db; close: () => Promise<void> } {
+  const url = process.env.DATABASE_URL;
+  if (url) {
+    // prepare:false keeps this compatible with Supabase's transaction pooler.
+    const client = postgres(url, { prepare: false });
+    return { db: drizzlePostgres(client, { schema }), close: () => client.end() };
+  }
+  const dataDir = process.env.PGLITE_PATH ?? "data/pgdata";
+  fs.mkdirSync(dataDir, { recursive: true });
+  const client = new PGlite(dataDir);
+  // PGlite's drizzle instance exposes the same query API; unify on one type.
+  return { db: drizzlePglite(client, { schema }) as unknown as Db, close: () => client.close() };
 }
 
-export const db = globalForDb.__yggDb ?? createDb();
-if (process.env.NODE_ENV !== "production") globalForDb.__yggDb = db;
+// Always cache on globalThis: Next.js instantiates this module once per route
+// bundle, and PGlite must be a single instance per data directory. globalThis
+// is shared across bundles within the one server process.
+const instance = globalForDb.__yggDb
+  ? { db: globalForDb.__yggDb, close: globalForDb.__yggClose! }
+  : createDb();
+globalForDb.__yggDb = instance.db;
+globalForDb.__yggClose = instance.close;
+
+export const db = instance.db;
+/** For scripts (migrate/seed) — the Next.js server never calls this. */
+export const closeDb = instance.close;
 
 export * as tables from "./schema";

@@ -6,25 +6,26 @@ import { PageHeader } from "@/components/ui";
 import { DataTable } from "@/components/DataTable";
 
 export default async function LoansPage() {
-  const rows = db
+  const rows = await db
     .select({ loan: loans, customer: customers })
     .from(loans)
     .innerJoin(customers, eq(loans.customerId, customers.id))
     .orderBy(asc(loans.contractNumber))
-    .all();
+    ;
 
   const balances = new Map<number, number>();
   const loanIds = rows.map((r) => r.loan.id);
   if (loanIds.length > 0) {
-    const sums = db
+    const sums = await db
       .select({
         loanId: transactions.loanId,
-        balance: sql<number>`coalesce(sum(${transactions.amountExGstCents} + ${transactions.gstCents}), 0)`,
+        // sum() over integers is bigint in Postgres — cast so the driver returns a number
+        balance: sql<number>`coalesce(sum(${transactions.amountExGstCents} + ${transactions.gstCents}), 0)::int`,
       })
       .from(transactions)
       .where(inArray(transactions.loanId, loanIds))
       .groupBy(transactions.loanId)
-      .all();
+      ;
     for (const s of sums) balances.set(s.loanId, s.balance);
   }
 

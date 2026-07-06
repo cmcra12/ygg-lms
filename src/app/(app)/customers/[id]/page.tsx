@@ -35,21 +35,21 @@ export default async function CustomerDetailPage({
   const user = await requireUser();
   const { id } = await params;
   const customerId = Number(id);
-  const [customer] = db.select().from(customers).where(eq(customers.id, customerId)).all();
+  const [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
   if (!customer) notFound();
 
-  const contacts = db
+  const contacts = await db
     .select()
     .from(customerContacts)
     .where(eq(customerContacts.customerId, customerId))
-    .all();
-  const policies = db
+    ;
+  const policies = await db
     .select()
     .from(insurancePolicies)
     .where(eq(insurancePolicies.customerId, customerId))
-    .all();
-  const customerLoans = db.select().from(loans).where(eq(loans.customerId, customerId)).all();
-  const customerAssets = db.select().from(assets).where(eq(assets.customerId, customerId)).all();
+    ;
+  const customerLoans = await db.select().from(loans).where(eq(loans.customerId, customerId));
+  const customerAssets = await db.select().from(assets).where(eq(assets.customerId, customerId));
 
   const canDelete = can(user, "records:delete");
   const today = todaySydney();

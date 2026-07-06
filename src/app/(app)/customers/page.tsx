@@ -7,7 +7,7 @@ import { PageHeader, LinkButton } from "@/components/ui";
 import { DataTable } from "@/components/DataTable";
 
 export default async function CustomersPage() {
-  const rows = db.select().from(customers).orderBy(asc(customers.name)).all();
+  const rows = await db.select().from(customers).orderBy(asc(customers.name));
 
   return (
     <>

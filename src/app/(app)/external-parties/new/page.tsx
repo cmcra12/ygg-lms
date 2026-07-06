@@ -6,12 +6,12 @@ import { ExternalPartyForm } from "../ExternalPartyForm";
 import { saveExternalParty } from "../actions";
 
 export default async function NewExternalPartyPage() {
-  const aggregators = db
+  const aggregators = await db
     .select({ id: externalParties.id, name: externalParties.name })
     .from(externalParties)
     .where(eq(externalParties.type, "aggregator"))
     .orderBy(asc(externalParties.name))
-    .all();
+    ;
 
   return (
     <>

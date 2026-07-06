@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, boolean, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 // Conventions:
 // - All money is stored as integer cents, ex-GST, with GST tracked in a separate
@@ -10,17 +10,17 @@ import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqli
 // Internal staff & auth
 // ---------------------------------------------------------------------------
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: text("role", { enum: ["admin", "credit", "operations"] }).notNull(),
-  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  active: boolean("active").notNull().default(true),
   createdAt: text("created_at").notNull(),
 });
 
-export const sessions = sqliteTable("sessions", {
+export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(), // random token
   userId: integer("user_id").notNull().references(() => users.id),
   expiresAt: text("expires_at").notNull(),
@@ -31,10 +31,10 @@ export const sessions = sqliteTable("sessions", {
 // Parties & people
 // ---------------------------------------------------------------------------
 
-export const customers = sqliteTable(
+export const customers = pgTable(
   "customers",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     code: text("code").notNull().unique(), // e.g. C10023
     name: text("name").notNull(),
     type: text("type", { enum: ["individual", "company"] }).notNull(),
@@ -55,10 +55,10 @@ export const customers = sqliteTable(
   (t) => [index("customers_name_idx").on(t.name)],
 );
 
-export const customerContacts = sqliteTable(
+export const customerContacts = pgTable(
   "customer_contacts",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     customerId: integer("customer_id").notNull().references(() => customers.id),
     kind: text("kind", { enum: ["key", "authorised", "director_guarantor"] }).notNull(),
     name: text("name").notNull(),
@@ -79,10 +79,10 @@ export const customerContacts = sqliteTable(
   (t) => [index("customer_contacts_customer_idx").on(t.customerId)],
 );
 
-export const insurancePolicies = sqliteTable(
+export const insurancePolicies = pgTable(
   "insurance_policies",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     customerId: integer("customer_id").notNull().references(() => customers.id),
     insurer: text("insurer").notNull(),
     policyNumber: text("policy_number").notNull(),
@@ -95,18 +95,18 @@ export const insurancePolicies = sqliteTable(
   (t) => [index("insurance_policies_customer_idx").on(t.customerId)],
 );
 
-export const insurancePolicyAssets = sqliteTable(
+export const insurancePolicyAssets = pgTable(
   "insurance_policy_assets",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     policyId: integer("policy_id").notNull().references(() => insurancePolicies.id),
     assetId: integer("asset_id").notNull().references(() => assets.id),
   },
   (t) => [uniqueIndex("insurance_policy_assets_uniq").on(t.policyId, t.assetId)],
 );
 
-export const externalParties = sqliteTable("external_parties", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const externalParties = pgTable("external_parties", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   type: text("type", { enum: ["broker", "vendor", "referrer", "aggregator"] }).notNull(),
   name: text("name").notNull(),
   contactName: text("contact_name"),
@@ -119,7 +119,7 @@ export const externalParties = sqliteTable("external_parties", {
   accreditationStatus: text("accreditation_status", {
     enum: ["not_accredited", "pending", "accredited", "suspended"],
   }).notNull().default("not_accredited"),
-  paidBefore: integer("paid_before", { mode: "boolean" }).notNull().default(false),
+  paidBefore: boolean("paid_before").notNull().default(false),
   // Brokers can sit under an aggregator, which is itself an external party.
   aggregatorId: integer("aggregator_id"),
   status: text("status", { enum: ["active", "inactive"] }).notNull().default("active"),
@@ -132,10 +132,10 @@ export const externalParties = sqliteTable("external_parties", {
 // Originations (schema in place for Phase 2)
 // ---------------------------------------------------------------------------
 
-export const applications = sqliteTable(
+export const applications = pgTable(
   "applications",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     reference: text("reference").notNull().unique(), // e.g. APP-2026-0001
     customerId: integer("customer_id").notNull().references(() => customers.id),
     status: text("status", {
@@ -158,20 +158,20 @@ export const applications = sqliteTable(
   (t) => [index("applications_customer_idx").on(t.customerId)],
 );
 
-export const applicationAssets = sqliteTable(
+export const applicationAssets = pgTable(
   "application_assets",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     applicationId: integer("application_id").notNull().references(() => applications.id),
     assetId: integer("asset_id").notNull().references(() => assets.id),
   },
   (t) => [uniqueIndex("application_assets_uniq").on(t.applicationId, t.assetId)],
 );
 
-export const applicationChecklistItems = sqliteTable(
+export const applicationChecklistItems = pgTable(
   "application_checklist_items",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     applicationId: integer("application_id").notNull().references(() => applications.id),
     key: text("key").notNull(), // id_matrix, credit_check, info_agent, ppsr_search, ca_generated, contract_generated
     label: text("label").notNull(),
@@ -185,8 +185,8 @@ export const applicationChecklistItems = sqliteTable(
   (t) => [index("application_checklist_app_idx").on(t.applicationId)],
 );
 
-export const documents = sqliteTable("documents", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const documents = pgTable("documents", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   template: text("template").notNull(), // template filename used
   entityType: text("entity_type").notNull(), // application | loan | customer
   entityId: integer("entity_id").notNull(),
@@ -199,10 +199,10 @@ export const documents = sqliteTable("documents", {
 // Facilities & money
 // ---------------------------------------------------------------------------
 
-export const loans = sqliteTable(
+export const loans = pgTable(
   "loans",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     contractNumber: text("contract_number").notNull().unique(), // e.g. YGG-00042
     customerId: integer("customer_id").notNull().references(() => customers.id),
     // Exactly one loan per application.
@@ -216,7 +216,7 @@ export const loans = sqliteTable(
     status: text("status", { enum: ["active", "paid_out", "written_off"] })
       .notNull()
       .default("active"),
-    arrears: integer("arrears", { mode: "boolean" }).notNull().default(false),
+    arrears: boolean("arrears").notNull().default(false),
     notes: text("notes"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
@@ -227,25 +227,25 @@ export const loans = sqliteTable(
   ],
 );
 
-export const loanSchedules = sqliteTable(
+export const loanSchedules = pgTable(
   "loan_schedules",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     loanId: integer("loan_id").notNull().references(() => loans.id),
     code: text("code").notNull(), // RENT, DAMAGE WAIVER, ...
     amountExGstCents: integer("amount_ex_gst_cents").notNull(),
     gstCents: integer("gst_cents").notNull(),
     frequency: text("frequency", { enum: ["weekly", "fortnightly", "monthly"] }).notNull(),
     nextRunDate: text("next_run_date").notNull(),
-    active: integer("active", { mode: "boolean" }).notNull().default(true),
+    active: boolean("active").notNull().default(true),
   },
   (t) => [index("loan_schedules_loan_idx").on(t.loanId)],
 );
 
-export const transactions = sqliteTable(
+export const transactions = pgTable(
   "transactions",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     loanId: integer("loan_id").notNull().references(() => loans.id),
     date: text("date").notNull(),
     type: text("type", {
@@ -264,8 +264,8 @@ export const transactions = sqliteTable(
   (t) => [index("transactions_loan_idx").on(t.loanId), index("transactions_date_idx").on(t.date)],
 );
 
-export const directDebitAuthorities = sqliteTable("direct_debit_authorities", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const directDebitAuthorities = pgTable("direct_debit_authorities", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   loanId: integer("loan_id").notNull().references(() => loans.id),
   accountName: text("account_name").notNull(),
   bsb: text("bsb").notNull(),
@@ -280,10 +280,10 @@ export const directDebitAuthorities = sqliteTable("direct_debit_authorities", {
 // Security & collateral
 // ---------------------------------------------------------------------------
 
-export const assets = sqliteTable(
+export const assets = pgTable(
   "assets",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     description: text("description").notNull(),
     category: text("category"), // e.g. Excavator, Prime Mover, Trailer
     vin: text("vin"),
@@ -304,10 +304,10 @@ export const assets = sqliteTable(
   ],
 );
 
-export const ppsrRegistrations = sqliteTable(
+export const ppsrRegistrations = pgTable(
   "ppsr_registrations",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     assetId: integer("asset_id").notNull().references(() => assets.id),
     registrationNumber: text("registration_number"),
     kind: text("kind", { enum: ["pmsi", "other"] }).notNull().default("pmsi"),
@@ -322,10 +322,10 @@ export const ppsrRegistrations = sqliteTable(
   (t) => [index("ppsr_registrations_asset_idx").on(t.assetId)],
 );
 
-export const ppsrEvents = sqliteTable(
+export const ppsrEvents = pgTable(
   "ppsr_events",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     registrationId: integer("registration_id").notNull().references(() => ppsrRegistrations.id),
     event: text("event", { enum: ["searched", "registered", "renewed", "discharged"] }).notNull(),
     date: text("date").notNull(),
@@ -341,10 +341,10 @@ export const ppsrEvents = sqliteTable(
 
 // Immutable. Written only by the audited mutation layer (src/db/mutate.ts) —
 // no screen or action may write to business tables except through it.
-export const auditLog = sqliteTable(
+export const auditLog = pgTable(
   "audit_log",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     timestamp: text("timestamp").notNull(),
     actorId: integer("actor_id"),
     actorName: text("actor_name").notNull(),

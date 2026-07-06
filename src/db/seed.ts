@@ -2,7 +2,7 @@
 // Run with: npm run db:seed (after db:migrate). Idempotence: refuses to run
 // on a non-empty database — use npm run db:reset to start over.
 
-import { db } from "./index";
+import { db, closeDb } from "./index";
 import * as t from "./schema";
 import { auditedInsert, type Actor } from "./mutate";
 import { hashPassword } from "../lib/password";
@@ -32,30 +32,40 @@ function makeAcn(start: number): string {
   }
 }
 
-const existing = db.select().from(t.users).limit(1).all();
+async function main() {
+const existing = await db.select().from(t.users).limit(1);
 if (existing.length > 0) {
   console.log("Database already seeded — run `npm run db:reset` to reseed from scratch.");
-  process.exit(0);
+  return;
 }
 
 // --- Staff -----------------------------------------------------------------
 
-function insert<T extends { id: number }>(table: Parameters<typeof auditedInsert>[1], entityType: string, values: Record<string, unknown>): T {
+function insert<T extends { id: number }>(
+  table: Parameters<typeof auditedInsert>[1],
+  entityType: string,
+  values: Record<string, unknown>,
+): Promise<T> {
   return auditedInsert<T>(SEED_ACTOR, table, entityType, values);
 }
 
-const [admin, credit, ops] = [
+const staffSeeds = [
   { name: "Cooper McRae", email: "admin@ygg.com.au", role: "admin" as const },
   { name: "Priya Sharma", email: "credit@ygg.com.au", role: "credit" as const },
   { name: "Liam O'Connell", email: "operations@ygg.com.au", role: "operations" as const },
-].map((u) =>
-  insert<{ id: number }>(t.users, "user", {
-    ...u,
-    passwordHash: hashPassword("yellowgate"),
-    active: true,
-    createdAt: now(),
-  }),
-);
+];
+const staff: Array<{ id: number }> = [];
+for (const u of staffSeeds) {
+  staff.push(
+    await insert<{ id: number }>(t.users, "user", {
+      ...u,
+      passwordHash: hashPassword("yellowgate"),
+      active: true,
+      createdAt: now(),
+    }),
+  );
+}
+const [, credit, ops] = staff;
 
 // --- Customers, contacts, insurance -----------------------------------------
 
@@ -165,8 +175,10 @@ const customerSeeds: CustomerSeed[] = [
   },
 ];
 
-const customers = customerSeeds.map((c, i) =>
-  insert<{ id: number; name: string }>(t.customers, "customer", {
+const customers: Array<{ id: number; name: string }> = [];
+for (const [i, c] of customerSeeds.entries()) {
+  customers.push(
+    await insert<{ id: number; name: string }>(t.customers, "customer", {
     code: `C${1001 + i}`,
     name: c.name,
     type: "company",
@@ -179,14 +191,15 @@ const customers = customerSeeds.map((c, i) =>
     state: c.state,
     postcode: c.postcode,
     status: "active",
-    createdAt: now(),
-    updatedAt: now(),
-  }),
-);
+      createdAt: now(),
+      updatedAt: now(),
+    }),
+  );
+}
 
-customerSeeds.forEach((c, i) => {
+for (const [i, c] of customerSeeds.entries()) {
   for (const contact of c.contacts) {
-    insert(t.customerContacts, "customer_contact", {
+    await insert(t.customerContacts, "customer_contact", {
       customerId: customers[i].id,
       kind: contact.kind,
       name: contact.name,
@@ -198,11 +211,11 @@ customerSeeds.forEach((c, i) => {
       updatedAt: now(),
     });
   }
-});
+}
 
 const insurers = ["NTI", "QBE", "Allianz", "CGU", "GT Insurance"];
-customers.forEach((c, i) => {
-  insert(t.insurancePolicies, "insurance_policy", {
+for (const [i, c] of customers.entries()) {
+  await insert(t.insurancePolicies, "insurance_policy", {
     customerId: c.id,
     insurer: insurers[i % insurers.length],
     policyNumber: `POL-${882100 + i * 37}`,
@@ -213,11 +226,11 @@ customers.forEach((c, i) => {
     createdAt: now(),
     updatedAt: now(),
   });
-});
+}
 
 // --- External parties --------------------------------------------------------
 
-const aggregator = insert<{ id: number }>(t.externalParties, "external_party", {
+const aggregator = await insert<{ id: number }>(t.externalParties, "external_party", {
   type: "aggregator",
   name: "COG Aggregation",
   contactName: "Sarah Millward",
@@ -236,8 +249,10 @@ const brokerSeeds = [
   { name: "Meridian Capital Brokers", contactName: "Lucy Tran", suffix: "meridiancap.com.au", agg: true },
   { name: "Tablelands Finance Co", contactName: "Grant Ashby", suffix: "tablelandsfinance.com.au", agg: false },
 ];
-const brokers = brokerSeeds.map((b, i) =>
-  insert<{ id: number }>(t.externalParties, "external_party", {
+const brokers: Array<{ id: number }> = [];
+for (const [i, b] of brokerSeeds.entries()) {
+  brokers.push(
+    await insert<{ id: number }>(t.externalParties, "external_party", {
     type: "broker",
     name: b.name,
     contactName: b.contactName,
@@ -250,13 +265,14 @@ const brokers = brokerSeeds.map((b, i) =>
     accreditationStatus: "accredited",
     paidBefore: i < 2,
     aggregatorId: b.agg ? aggregator.id : null,
-    status: "active",
-    createdAt: now(),
-    updatedAt: now(),
-  }),
-);
+      status: "active",
+      createdAt: now(),
+      updatedAt: now(),
+    }),
+  );
+}
 
-insert(t.externalParties, "external_party", {
+await insert(t.externalParties, "external_party", {
   type: "vendor",
   name: "Eastern Plant Sales Pty Ltd",
   contactName: "Rick Doyle",
@@ -269,7 +285,7 @@ insert(t.externalParties, "external_party", {
   createdAt: now(),
   updatedAt: now(),
 });
-insert(t.externalParties, "external_party", {
+await insert(t.externalParties, "external_party", {
   type: "referrer",
   name: "Hunter Valley Accounting Group",
   contactName: "Fiona Wells",
@@ -364,7 +380,7 @@ for (const deal of deals) {
   const startDate = iso(-deal.startMonthsAgo * 30);
   const totalValue = deal.assets.reduce((s, a) => s + a.value, 0);
 
-  const application = insert<{ id: number }>(t.applications, "application", {
+  const application = await insert<{ id: number }>(t.applications, "application", {
     reference: `APP-2025-${String(appSeq++).padStart(4, "0")}`,
     customerId: customer.id,
     status: "converted",
@@ -380,7 +396,7 @@ for (const deal of deals) {
     updatedAt: now(),
   });
 
-  const loan = insert<{ id: number; contractNumber: string }>(t.loans, "loan", {
+  const loan = await insert<{ id: number; contractNumber: string }>(t.loans, "loan", {
     contractNumber: `YGG-${String(contractSeq++).padStart(5, "0")}`,
     customerId: customer.id,
     applicationId: application.id,
@@ -395,7 +411,7 @@ for (const deal of deals) {
   });
 
   for (const assetSeed of deal.assets) {
-    const asset = insert<{ id: number }>(t.assets, "asset", {
+    const asset = await insert<{ id: number }>(t.assets, "asset", {
       description: assetSeed.description,
       category: assetSeed.category,
       vin: assetSeed.vin ?? null,
@@ -408,11 +424,11 @@ for (const deal of deals) {
       createdAt: now(),
       updatedAt: now(),
     });
-    insert(t.applicationAssets, "application_asset", {
+    await insert(t.applicationAssets, "application_asset", {
       applicationId: application.id,
       assetId: asset.id,
     });
-    const registration = insert<{ id: number }>(t.ppsrRegistrations, "ppsr_registration", {
+    const registration = await insert<{ id: number }>(t.ppsrRegistrations, "ppsr_registration", {
       assetId: asset.id,
       registrationNumber: `2025${String(202500000000 + asset.id * 977351).slice(-10)}`,
       kind: "pmsi",
@@ -422,14 +438,14 @@ for (const deal of deals) {
       createdAt: now(),
       updatedAt: now(),
     });
-    insert(t.ppsrEvents, "ppsr_event", {
+    await insert(t.ppsrEvents, "ppsr_event", {
       registrationId: registration.id,
       event: "searched",
       date: iso(-deal.startMonthsAgo * 30 - 10),
       notes: "Pre-settlement PPSR search — no adverse registrations",
       createdBy: credit.id,
     });
-    insert(t.ppsrEvents, "ppsr_event", {
+    await insert(t.ppsrEvents, "ppsr_event", {
       registrationId: registration.id,
       event: "registered",
       date: startDate,
@@ -437,7 +453,7 @@ for (const deal of deals) {
       createdBy: ops.id,
     });
     if (deal.status === "paid_out") {
-      insert(t.ppsrEvents, "ppsr_event", {
+      await insert(t.ppsrEvents, "ppsr_event", {
         registrationId: registration.id,
         event: "discharged",
         date: iso(-30),
@@ -449,7 +465,7 @@ for (const deal of deals) {
 
   // Recurring charge schedules.
   const rentCents = deal.rentExGst * 100;
-  insert(t.loanSchedules, "loan_schedule", {
+  await insert(t.loanSchedules, "loan_schedule", {
     loanId: loan.id,
     code: "RENT",
     amountExGstCents: rentCents,
@@ -460,7 +476,7 @@ for (const deal of deals) {
   });
   if (deal.damageWaiver) {
     const dwCents = deal.damageWaiver * 100;
-    insert(t.loanSchedules, "loan_schedule", {
+    await insert(t.loanSchedules, "loan_schedule", {
       loanId: loan.id,
       code: "DAMAGE WAIVER",
       amountExGstCents: dwCents,
@@ -472,7 +488,7 @@ for (const deal of deals) {
   }
 
   // Zepto direct debit authority.
-  insert(t.directDebitAuthorities, "direct_debit_authority", {
+  await insert(t.directDebitAuthorities, "direct_debit_authority", {
     loanId: loan.id,
     accountName: customer.name,
     bsb: ["062184", "082356", "013006", "064462", "085458"][deal.customerIdx % 5],
@@ -486,7 +502,7 @@ for (const deal of deals) {
   // Ledger: upfront at settlement, then monthly RENT/DW charges and payments.
   const monthsElapsed = deal.status === "paid_out" ? deal.termMonths : deal.startMonthsAgo;
   const upfrontCents = Math.round(rentCents * 1.5);
-  insert(t.transactions, "transaction", {
+  await insert(t.transactions, "transaction", {
     loanId: loan.id,
     date: startDate,
     type: "upfront",
@@ -498,7 +514,7 @@ for (const deal of deals) {
     createdBy: ops.id,
     createdAt: now(),
   });
-  insert(t.transactions, "transaction", {
+  await insert(t.transactions, "transaction", {
     loanId: loan.id,
     date: startDate,
     type: "payment",
@@ -514,7 +530,7 @@ for (const deal of deals) {
   const dwCents = (deal.damageWaiver ?? 0) * 100;
   for (let m = 1; m <= monthsElapsed; m++) {
     const chargeDate = iso(-(deal.startMonthsAgo - m) * 30 - 15);
-    insert(t.transactions, "transaction", {
+    await insert(t.transactions, "transaction", {
       loanId: loan.id,
       date: chargeDate,
       type: "charge",
@@ -527,7 +543,7 @@ for (const deal of deals) {
       createdAt: now(),
     });
     if (dwCents > 0) {
-      insert(t.transactions, "transaction", {
+      await insert(t.transactions, "transaction", {
         loanId: loan.id,
         date: chargeDate,
         type: "charge",
@@ -545,7 +561,7 @@ for (const deal of deals) {
     // The arrears deal misses its two most recent debits, with one dishonour fee.
     const missed = deal.arrears && m > monthsElapsed - 2;
     if (!missed) {
-      insert(t.transactions, "transaction", {
+      await insert(t.transactions, "transaction", {
         loanId: loan.id,
         date: chargeDate,
         type: "payment",
@@ -558,7 +574,7 @@ for (const deal of deals) {
         createdAt: now(),
       });
     } else if (m === monthsElapsed) {
-      insert(t.transactions, "transaction", {
+      await insert(t.transactions, "transaction", {
         loanId: loan.id,
         date: chargeDate,
         type: "dishonour_fee",
@@ -575,18 +591,26 @@ for (const deal of deals) {
 }
 
 const counts = {
-  users: db.select().from(t.users).all().length,
-  customers: db.select().from(t.customers).all().length,
-  contacts: db.select().from(t.customerContacts).all().length,
-  policies: db.select().from(t.insurancePolicies).all().length,
-  externalParties: db.select().from(t.externalParties).all().length,
-  applications: db.select().from(t.applications).all().length,
-  loans: db.select().from(t.loans).all().length,
-  assets: db.select().from(t.assets).all().length,
-  schedules: db.select().from(t.loanSchedules).all().length,
-  transactions: db.select().from(t.transactions).all().length,
-  ppsr: db.select().from(t.ppsrRegistrations).all().length,
-  auditEntries: db.select().from(t.auditLog).all().length,
+  users: (await db.select().from(t.users)).length,
+  customers: (await db.select().from(t.customers)).length,
+  contacts: (await db.select().from(t.customerContacts)).length,
+  policies: (await db.select().from(t.insurancePolicies)).length,
+  externalParties: (await db.select().from(t.externalParties)).length,
+  applications: (await db.select().from(t.applications)).length,
+  loans: (await db.select().from(t.loans)).length,
+  assets: (await db.select().from(t.assets)).length,
+  schedules: (await db.select().from(t.loanSchedules)).length,
+  transactions: (await db.select().from(t.transactions)).length,
+  ppsr: (await db.select().from(t.ppsrRegistrations)).length,
+  auditEntries: (await db.select().from(t.auditLog)).length,
 };
 console.log("Seed complete:", counts);
 console.log("Sign in: admin@ygg.com.au / credit@ygg.com.au / operations@ygg.com.au — password: yellowgate");
+
+await closeDb();
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

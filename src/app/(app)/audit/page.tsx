@@ -11,7 +11,7 @@ export default async function AuditLogPage() {
   const user = await requireUser();
   assertCan(user, "audit:view");
 
-  const entries = db.select().from(auditLog).orderBy(desc(auditLog.id)).limit(1000).all();
+  const entries = await db.select().from(auditLog).orderBy(desc(auditLog.id)).limit(1000);
 
   return (
     <>

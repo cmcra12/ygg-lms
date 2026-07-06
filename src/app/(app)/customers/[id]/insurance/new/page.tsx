@@ -9,7 +9,7 @@ import { savePolicy } from "../../../actions";
 export default async function NewPolicyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const customerId = Number(id);
-  const [customer] = db.select().from(customers).where(eq(customers.id, customerId)).all();
+  const [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
   if (!customer) notFound();
 
   return (

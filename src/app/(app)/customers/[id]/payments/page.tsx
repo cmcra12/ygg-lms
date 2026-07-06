@@ -14,23 +14,22 @@ export default async function CustomerPaymentsPage({
 }) {
   const { id } = await params;
   const customerId = Number(id);
-  const [customer] = db.select().from(customers).where(eq(customers.id, customerId)).all();
+  const [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
   if (!customer) notFound();
 
-  const customerLoans = db.select().from(loans).where(eq(loans.customerId, customerId)).all();
+  const customerLoans = await db.select().from(loans).where(eq(loans.customerId, customerId));
   const loanById = new Map(customerLoans.map((l) => [l.id, l]));
   const loanIds = customerLoans.map((l) => l.id);
 
-  const payments =
+  const payments = (
     loanIds.length === 0
       ? []
-      : db
+      : await db
           .select()
           .from(transactions)
           .where(inArray(transactions.loanId, loanIds))
           .orderBy(desc(transactions.date), desc(transactions.id))
-          .all()
-          .filter((t) => t.type === "payment" || t.type === "dishonour_fee");
+  ).filter((t) => t.type === "payment" || t.type === "dishonour_fee");
 
   const totalReceived = payments
     .filter((t) => t.type === "payment")

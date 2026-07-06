@@ -26,25 +26,25 @@ const TXN_BADGE: Record<string, "green" | "red" | "amber" | "slate" | "blue"> = 
 export default async function LoanDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const loanId = Number(id);
-  const [loan] = db.select().from(loans).where(eq(loans.id, loanId)).all();
+  const [loan] = await db.select().from(loans).where(eq(loans.id, loanId));
   if (!loan) notFound();
 
-  const [customer] = db.select().from(customers).where(eq(customers.id, loan.customerId)).all();
-  const schedules = db.select().from(loanSchedules).where(eq(loanSchedules.loanId, loanId)).all();
-  const loanAssets = db.select().from(assets).where(eq(assets.loanId, loanId)).all();
-  const [ddr] = db
+  const [customer] = await db.select().from(customers).where(eq(customers.id, loan.customerId));
+  const schedules = await db.select().from(loanSchedules).where(eq(loanSchedules.loanId, loanId));
+  const loanAssets = await db.select().from(assets).where(eq(assets.loanId, loanId));
+  const [ddr] = await db
     .select()
     .from(directDebitAuthorities)
     .where(eq(directDebitAuthorities.loanId, loanId))
-    .all();
+    ;
 
   // Ledger, oldest first, with a running balance (inc GST).
-  const txns = db
+  const txns = await db
     .select()
     .from(transactions)
     .where(eq(transactions.loanId, loanId))
     .orderBy(asc(transactions.date), asc(transactions.id))
-    .all();
+    ;
   let running = 0;
   const ledger = txns.map((t) => {
     running += t.amountExGstCents + t.gstCents;

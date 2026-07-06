@@ -1,10 +1,12 @@
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  dialect: "sqlite",
+  dialect: "postgresql",
   schema: "./src/db/schema.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: process.env.DATABASE_PATH ?? "data/ygg.db",
+    // Only used by drizzle-kit's own db commands; migrations are applied via
+    // npm run db:migrate, which also works against the local PGlite database.
+    url: process.env.DATABASE_URL ?? "postgres://localhost:5432/ygg",
   },
 });

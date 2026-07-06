@@ -11,7 +11,7 @@ export default async function UsersPage() {
   const actor = await requireUser();
   assertCan(actor, "users:manage");
 
-  const rows = db.select().from(users).orderBy(asc(users.name)).all();
+  const rows = await db.select().from(users).orderBy(asc(users.name));
 
   return (
     <>

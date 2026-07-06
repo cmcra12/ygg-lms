@@ -7,7 +7,7 @@ import { PageHeader, LinkButton } from "@/components/ui";
 import { DataTable } from "@/components/DataTable";
 
 export default async function ExternalPartiesPage() {
-  const rows = db.select().from(externalParties).orderBy(asc(externalParties.name)).all();
+  const rows = await db.select().from(externalParties).orderBy(asc(externalParties.name));
   const nameById = new Map(rows.map((p) => [p.id, p.name]));
 
   return (

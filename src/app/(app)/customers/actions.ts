@@ -11,8 +11,8 @@ import { assertCan } from "@/lib/rbac";
 import { cleanDigits, isValidAbn, isValidAcn } from "@/lib/abn";
 import type { ActionState } from "@/components/FormFrame";
 
-function nextCustomerCode(): string {
-  const [latest] = db.select().from(customers).orderBy(desc(customers.id)).limit(1).all();
+async function nextCustomerCode(): Promise<string> {
+  const [latest] = await db.select().from(customers).orderBy(desc(customers.id)).limit(1);
   const nextNumber = (latest?.id ?? 0) + 1001;
   return `C${nextNumber}`;
 }
@@ -56,14 +56,14 @@ export async function saveCustomer(
 
   let id = customerId;
   if (id == null) {
-    const row = auditedInsert<{ id: number }>(user, customers, "customer", {
+    const row = await auditedInsert<{ id: number }>(user, customers, "customer", {
       ...values,
-      code: nextCustomerCode(),
+      code: await nextCustomerCode(),
       createdAt: now,
     });
     id = row.id;
   } else {
-    auditedUpdate(user, customers, "customer", id, values);
+    await auditedUpdate(user, customers, "customer", id, values);
   }
   revalidatePath("/customers");
   redirect(`/customers/${id}`);
@@ -107,9 +107,9 @@ export async function saveContact(
   };
 
   if (contactId == null) {
-    auditedInsert(user, customerContacts, "customer_contact", { ...values, createdAt: now });
+    await auditedInsert(user, customerContacts, "customer_contact", { ...values, createdAt: now });
   } else {
-    auditedUpdate(user, customerContacts, "customer_contact", contactId, values);
+    await auditedUpdate(user, customerContacts, "customer_contact", contactId, values);
   }
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}`);
@@ -118,7 +118,7 @@ export async function saveContact(
 export async function deleteContact(customerId: number, contactId: number): Promise<void> {
   const user = await requireUser();
   assertCan(user, "records:delete");
-  auditedDelete(user, customerContacts, "customer_contact", contactId);
+  await auditedDelete(user, customerContacts, "customer_contact", contactId);
   revalidatePath(`/customers/${customerId}`);
 }
 
@@ -152,9 +152,9 @@ export async function savePolicy(
   };
 
   if (policyId == null) {
-    auditedInsert(user, insurancePolicies, "insurance_policy", { ...values, createdAt: now });
+    await auditedInsert(user, insurancePolicies, "insurance_policy", { ...values, createdAt: now });
   } else {
-    auditedUpdate(user, insurancePolicies, "insurance_policy", policyId, values);
+    await auditedUpdate(user, insurancePolicies, "insurance_policy", policyId, values);
   }
   revalidatePath(`/customers/${customerId}`);
   redirect(`/customers/${customerId}`);
@@ -163,6 +163,6 @@ export async function savePolicy(
 export async function deletePolicy(customerId: number, policyId: number): Promise<void> {
   const user = await requireUser();
   assertCan(user, "records:delete");
-  auditedDelete(user, insurancePolicies, "insurance_policy", policyId);
+  await auditedDelete(user, insurancePolicies, "insurance_policy", policyId);
   revalidatePath(`/customers/${customerId}`);
 }

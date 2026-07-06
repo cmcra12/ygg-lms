@@ -13,12 +13,12 @@ export default async function EditContactPage({
 }) {
   const { id, contactId } = await params;
   const customerId = Number(id);
-  const [customer] = db.select().from(customers).where(eq(customers.id, customerId)).all();
-  const [contact] = db
+  const [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
+  const [contact] = await db
     .select()
     .from(customerContacts)
     .where(and(eq(customerContacts.id, Number(contactId)), eq(customerContacts.customerId, customerId)))
-    .all();
+    ;
   if (!customer || !contact) notFound();
 
   return (

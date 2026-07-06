@@ -32,7 +32,7 @@ export async function saveUser(
     return { error: "Password must be at least 8 characters." };
   }
 
-  const [existing] = db.select().from(users).where(eq(users.email, email)).all();
+  const [existing] = await db.select().from(users).where(eq(users.email, email));
   if (existing && existing.id !== userId) return { error: "A user with that email already exists." };
 
   if (actor.id === userId && role !== "admin") {
@@ -49,9 +49,9 @@ export async function saveUser(
   if (password) values.passwordHash = hashPassword(password);
 
   if (userId == null) {
-    auditedInsert(actor, users, "user", { ...values, createdAt: new Date().toISOString() });
+    await auditedInsert(actor, users, "user", { ...values, createdAt: new Date().toISOString() });
   } else {
-    auditedUpdate(actor, users, "user", userId, values);
+    await auditedUpdate(actor, users, "user", userId, values);
   }
   revalidatePath("/settings/users");
   redirect("/settings/users");

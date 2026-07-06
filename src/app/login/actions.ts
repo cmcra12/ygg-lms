@@ -12,7 +12,7 @@ export async function login(_prev: ActionState, formData: FormData): Promise<Act
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "Email and password are required." };
 
-  const [user] = db.select().from(users).where(eq(users.email, email)).all();
+  const [user] = await db.select().from(users).where(eq(users.email, email));
   if (!user || !user.active || !verifyPassword(password, user.passwordHash)) {
     return { error: "Invalid email or password." };
   }

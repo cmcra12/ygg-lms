@@ -6,17 +6,17 @@ import { AssetForm } from "../AssetForm";
 import { saveAsset } from "../actions";
 
 export default async function NewAssetPage() {
-  const customerOptions = db
+  const customerOptions = await db
     .select({ id: customers.id, name: customers.name })
     .from(customers)
     .orderBy(asc(customers.name))
-    .all();
-  const loanOptions = db
+    ;
+  const loanOptions = await db
     .select({ id: loans.id, contractNumber: loans.contractNumber, customerName: customers.name })
     .from(loans)
     .innerJoin(customers, eq(loans.customerId, customers.id))
     .orderBy(asc(loans.contractNumber))
-    .all();
+    ;
 
   return (
     <>

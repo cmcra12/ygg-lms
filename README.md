@@ -10,13 +10,14 @@ automatic audit trail, global search, customers (contacts + insurance), external
 parties, master asset register, loans with read-only ledger, payment history
 drilldown, dashboard, seed data and CSV export everywhere.
 
-## Setup
+## Setup (local development)
 
-Requires Node.js 22+.
+Requires Node.js 22+. No database install needed — without `DATABASE_URL` the app
+runs an embedded Postgres (PGlite) that persists to `data/pgdata`.
 
 ```bash
 npm install
-npm run db:migrate   # creates data/ygg.db and applies drizzle/ migrations
+npm run db:migrate   # applies drizzle/ migrations
 npm run db:seed      # loads realistic fake Australian demo data
 npm run dev          # http://localhost:3000
 ```
@@ -29,8 +30,48 @@ Seeded logins (all use password `yellowgate` — change them in Staff after firs
 | credit@ygg.com.au | credit |
 | operations@ygg.com.au | operations |
 
-`npm run db:reset` drops the database and re-runs migrate + seed.
+`npm run db:reset` drops the local database and re-runs migrate + seed.
 For production: `npm run build && npm start`.
+
+## Production: Supabase + a Node host
+
+The database lives in **Supabase** (managed Postgres); the Next.js app itself runs on
+any Node host (Vercel is the usual pairing — Supabase does not host Next.js apps).
+
+**1. Create the Supabase project** at [supabase.com](https://supabase.com) (Region:
+Sydney `ap-southeast-2`). Note the database password you set.
+
+**2. Get the connection string** — dashboard → **Connect** →
+- long-running server (a VM, Railway, Render, Fly.io): **Session pooler** (port 5432)
+- serverless (Vercel, AWS Lambda): **Transaction pooler** (port 6543) — the app
+  already sets `prepare: false` on the driver, which the transaction pooler requires.
+
+It looks like
+`postgresql://postgres.<project-ref>:<password>@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres`.
+
+**3. Apply migrations and seed from your machine:**
+
+```bash
+DATABASE_URL="postgresql://postgres.<ref>:<password>@...pooler.supabase.com:5432/postgres" npm run db:migrate
+DATABASE_URL="..." npm run db:seed        # optional demo data; skip for a clean production start
+```
+
+Migrations are plain SQL committed under `drizzle/` and tracked by Drizzle in the
+database, so re-running `db:migrate` only applies what's new.
+
+**4. Deploy the app** with `DATABASE_URL` set as an environment variable (on Vercel:
+Project → Settings → Environment Variables). Nothing else is required — auth
+sessions, audit log and all data live in Supabase.
+
+Notes:
+- The app talks to Supabase **only** via `DATABASE_URL` (plain Postgres). It does not
+  use Supabase Auth, RLS or the supabase-js client — auth is the app's own session
+  system, and RBAC is enforced in the app layer, so keep the connection string secret
+  and don't expose the database publicly.
+- To reseed a Supabase database, drop and recreate the tables (Supabase SQL editor:
+  `drop schema public cascade; create schema public;` plus `drop schema drizzle cascade;`)
+  then re-run migrate + seed. There is deliberately no destructive reset script for
+  remote databases.
 
 ## Architecture
 
@@ -40,8 +81,8 @@ straight from the database; all writes go through server actions. One deployable
 ```
 src/
   db/
-    schema.ts        # Drizzle schema — every table, SQLite dialect kept portable
-    index.ts         # better-sqlite3 connection (WAL, FK enforcement)
+    schema.ts        # Drizzle schema — every table, Postgres dialect
+    index.ts         # DATABASE_URL → Supabase/Postgres, otherwise embedded PGlite
     mutate.ts        # THE audited mutation layer — see below
     migrate.ts       # applies drizzle/ SQL migrations
     seed.ts          # demo data (valid ABNs/ACNs, VINs, regos, AU suburbs)
@@ -99,8 +140,9 @@ The full schema for all four phases is already migrated — including originatio
 (`applications`, checklist items, documents), money (`loan_schedules`,
 `transactions`, `direct_debit_authorities`) and collateral (`ppsr_registrations`,
 `ppsr_events`) — so later phases and the finPOWER CSV importer have a stable target.
-SQLite via Drizzle, kept dialect-portable for the eventual Postgres move: no SQLite-only
-column types, JSON stored as text, booleans as integers, money as integers.
+Postgres via Drizzle everywhere — Supabase in production and embedded PGlite locally
+share the same dialect and the same committed SQL migrations, so there is no
+dev/prod drift. Money is integer cents, JSON audit snapshots are text.
 
 One application converts to exactly one loan (`loans.application_id` is unique).
 Assets carry current customer/loan links; reassignment to a new loan is blocked in

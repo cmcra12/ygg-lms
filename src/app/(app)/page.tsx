@@ -17,26 +17,25 @@ function StatCard({ label, value, href, alert }: { label: string; value: string;
 }
 
 export default async function DashboardPage() {
-  const count = (q: { all: () => unknown[] }) => q.all().length;
+  const activeLoans = (await db.select({ id: loans.id }).from(loans).where(eq(loans.status, "active"))).length;
+  const arrearsLoans = (
+    await db.select({ id: loans.id }).from(loans).where(and(eq(loans.status, "active"), eq(loans.arrears, true)))
+  ).length;
+  const activeCustomers = (
+    await db.select({ id: customers.id }).from(customers).where(eq(customers.status, "active"))
+  ).length;
+  const activeAssets = (await db.select({ id: assets.id }).from(assets).where(eq(assets.status, "active"))).length;
 
-  const activeLoans = count(db.select({ id: loans.id }).from(loans).where(eq(loans.status, "active")));
-  const arrearsLoans = count(
-    db.select({ id: loans.id }).from(loans).where(and(eq(loans.status, "active"), eq(loans.arrears, true))),
-  );
-  const activeCustomers = count(
-    db.select({ id: customers.id }).from(customers).where(eq(customers.status, "active")),
-  );
-  const activeAssets = count(db.select({ id: assets.id }).from(assets).where(eq(assets.status, "active")));
-
-  const [portfolio] = db
-    .select({ total: sql<number>`coalesce(sum(${assets.valueExGstCents}), 0)` })
+  const [portfolio] = await db
+    // sum() over integers is bigint in Postgres — cast so the driver returns a number
+    .select({ total: sql<number>`coalesce(sum(${assets.valueExGstCents}), 0)::int` })
     .from(assets)
     .where(eq(assets.status, "active"))
-    .all();
+    ;
 
   const today = todaySydney();
   const in60 = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const expiringPolicies = db
+  const expiringPolicies = await db
     .select({ policy: insurancePolicies, customer: customers })
     .from(insurancePolicies)
     .innerJoin(customers, eq(insurancePolicies.customerId, customers.id))
@@ -48,16 +47,16 @@ export default async function DashboardPage() {
       ),
     )
     .orderBy(insurancePolicies.expiryDate)
-    .all();
+    ;
 
-  const recent = db
+  const recent = await db
     .select({ txn: transactions, loan: loans, customer: customers })
     .from(transactions)
     .innerJoin(loans, eq(transactions.loanId, loans.id))
     .innerJoin(customers, eq(loans.customerId, customers.id))
     .orderBy(desc(transactions.date), desc(transactions.id))
     .limit(10)
-    .all();
+    ;
 
   return (
     <>

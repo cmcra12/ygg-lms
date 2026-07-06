@@ -11,18 +11,18 @@ export type SearchResult = {
 
 // Global search across customer names/codes, contact names/mobiles/emails,
 // VIN/rego/serial numbers and contract numbers.
-export function globalSearch(term: string, limit = 10): SearchResult[] {
+export async function globalSearch(term: string, limit = 10): Promise<SearchResult[]> {
   const q = `%${term.trim()}%`;
   if (term.trim().length < 2) return [];
 
-  const customerRows = db
+  const customerRows = await db
     .select()
     .from(customers)
     .where(or(like(customers.name, q), like(customers.code, q), like(customers.abn, q)))
     .limit(limit)
-    .all();
+    ;
 
-  const contactRows = db
+  const contactRows = await db
     .select({ contact: customerContacts, customer: customers })
     .from(customerContacts)
     .innerJoin(customers, eq(customerContacts.customerId, customers.id))
@@ -34,24 +34,24 @@ export function globalSearch(term: string, limit = 10): SearchResult[] {
       ),
     )
     .limit(limit)
-    .all();
+    ;
 
-  const assetRows = db
+  const assetRows = await db
     .select()
     .from(assets)
     .where(
       or(like(assets.vin, q), like(assets.rego, q), like(assets.serialNumber, q), like(assets.description, q)),
     )
     .limit(limit)
-    .all();
+    ;
 
-  const loanRows = db
+  const loanRows = await db
     .select({ loan: loans, customer: customers })
     .from(loans)
     .innerJoin(customers, eq(loans.customerId, customers.id))
     .where(like(loans.contractNumber, q))
     .limit(limit)
-    .all();
+    ;
 
   return [
     ...customerRows.map((c) => ({
