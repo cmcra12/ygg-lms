@@ -49,7 +49,15 @@ Sydney `ap-southeast-2`). Note the database password you set.
 It looks like
 `postgresql://postgres.<project-ref>:<password>@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres`.
 
-**3. Apply migrations and seed from your machine:**
+**3. Load the schema (and demo data). Two ways — pick one:**
+
+*No terminal (easiest):* open the Supabase dashboard → **SQL Editor**, paste the whole
+of [`supabase-setup.sql`](./supabase-setup.sql) from this repo, and click **Run**.
+That creates every table and loads the demo data in one shot. Only run it on an
+empty project. (Regenerate the file after schema changes with
+`npm run db:reset && npx tsx scripts/export-supabase-setup.ts`.)
+
+*Terminal:*
 
 ```bash
 DATABASE_URL="postgresql://postgres.<ref>:<password>@...pooler.supabase.com:5432/postgres" npm run db:migrate
@@ -57,7 +65,8 @@ DATABASE_URL="..." npm run db:seed        # optional demo data; skip for a clean
 ```
 
 Migrations are plain SQL committed under `drizzle/` and tracked by Drizzle in the
-database, so re-running `db:migrate` only applies what's new.
+database, so re-running `db:migrate` only applies what's new — `supabase-setup.sql`
+records the same bookkeeping, so the two paths stay compatible.
 
 **4. Deploy the app** with `DATABASE_URL` set as an environment variable (on Vercel:
 Project → Settings → Environment Variables). Nothing else is required — auth
