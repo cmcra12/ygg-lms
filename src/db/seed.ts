@@ -373,7 +373,8 @@ const deals: DealSeed[] = [
   },
 ];
 
-let contractSeq = 41;
+// Demo loans sit just below the live YGG51600+ contract series.
+let contractSeq = 51591;
 let appSeq = 1;
 
 for (const deal of deals) {
@@ -398,7 +399,7 @@ for (const deal of deals) {
   });
 
   const loan = await insert<{ id: number; contractNumber: string }>(t.loans, "loan", {
-    contractNumber: `YGG-${String(contractSeq++).padStart(5, "0")}`,
+    contractNumber: `YGG${contractSeq++}`,
     customerId: customer.id,
     applicationId: application.id,
     startDate,

@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  /* Yellowgate brand gold */
-  --color-ygg-50: #fffaeb;
-  --color-ygg-100: #fdefc8;
-  --color-ygg-400: #ffc72c;
-  --color-ygg-500: #f0b400;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* Yellowgate brand — vivid yellow on near-black */
+  --color-ygg-50: #fffbe6;
+  --color-ygg-100: #fff3bf;
+  --color-ygg-400: #ffd100;
+  --color-ygg-500: #efbe00;
   --color-ygg-600: #d19d00;
   --color-ygg-700: #a37a06;
 }
 
 body {
-  @apply bg-slate-100 text-slate-900 antialiased;
+  @apply bg-slate-50 text-slate-900 antialiased;
 }
 
 /* Shared form styles — plain tables and forms over fancy design. */
@@ -20,17 +20,17 @@ body {
   @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1;
 }
 .field-input {
-  @apply w-full rounded border border-slate-300 bg-white px-2.5 py-1.5 text-sm focus:border-ygg-500 focus:outline-none focus:ring-1 focus:ring-ygg-500;
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm transition-colors focus:border-ygg-500 focus:outline-none focus:ring-2 focus:ring-ygg-400/40;
 }
 .btn-primary {
-  @apply inline-flex items-center rounded bg-ygg-400 px-3 py-1.5 text-sm font-semibold text-slate-900 hover:bg-ygg-500 disabled:opacity-50 cursor-pointer;
+  @apply inline-flex items-center rounded-lg bg-ygg-400 px-3.5 py-2 text-sm font-semibold text-slate-950 shadow-sm transition-colors hover:bg-ygg-500 disabled:opacity-50 cursor-pointer;
 }
 .btn-secondary {
-  @apply inline-flex items-center rounded border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer;
+  @apply inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 cursor-pointer;
 }
 .btn-danger {
-  @apply inline-flex items-center rounded border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 cursor-pointer;
+  @apply inline-flex items-center rounded-lg border border-red-300 bg-white px-3.5 py-2 text-sm font-medium text-red-700 shadow-sm transition-colors hover:bg-red-50 cursor-pointer;
 }
 .card {
-  @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
 }

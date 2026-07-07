@@ -54,8 +54,8 @@ check("payment history", (await page.textContent("body")).includes("payments rec
 // Loans + read-only ledger
 await page.goto(BASE + "/loans");
 const loansTxt = await page.textContent("body");
-check("loans list", loansTxt.includes("YGG-000") && loansTxt.includes("Arrears"));
-await page.click("text=YGG-00041");
+check("loans list", loansTxt.includes("YGG515") && loansTxt.includes("Arrears"));
+await page.click("text=YGG51591");
 await page.waitForURL(/\/loans\/\d+$/);
 const ledger = await page.textContent("body");
 check("loan ledger", ledger.includes("Ledger (read-only)") && ledger.includes("RENT") && ledger.includes("Balance"));
@@ -68,7 +68,7 @@ check("asset register", assetsTxt.includes("Caterpillar") && assetsTxt.includes(
 // Global search: rego and contract number
 await page.goto(BASE + "/search?q=XT29GH");
 check("global search rego", (await page.textContent("body")).includes("Kenworth"));
-await page.goto(BASE + "/search?q=YGG-00044");
+await page.goto(BASE + "/search?q=YGG51594");
 check("global search contract", (await page.textContent("body")).includes("Loan"));
 
 // External parties
@@ -131,7 +131,7 @@ await page.waitForURL(/\/applications\/\d+$/);
 await page.click('button:has-text("Open loan account")');
 await page.waitForURL(/\/loans\/\d+$/, { timeout: 20000 });
 const newLoan = await page.textContent("body");
-check("convert to loan", newLoan.includes("YGG-000") && newLoan.includes("Assets on this loan"));
+check("convert to loan", newLoan.includes("YGG51600") && newLoan.includes("Assets on this loan"));
 check("PMSI registered on convert", newLoan.includes("Atlas Copco"));
 
 // RBAC: operations user doesn't get the Staff admin link

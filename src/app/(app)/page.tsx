@@ -7,9 +7,12 @@ import { PageHeader, Section, Badge } from "@/components/ui";
 
 function StatCard({ label, value, href, alert }: { label: string; value: string; href: string; alert?: boolean }) {
   return (
-    <Link href={href} className="card block p-4 hover:border-ygg-400">
+    <Link
+      href={href}
+      className="card block border-t-2 border-t-ygg-400 p-4 transition-shadow hover:shadow-md"
+    >
       <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className={`mt-1 text-2xl font-bold tabular-nums ${alert ? "text-red-600" : "text-slate-900"}`}>
+      <div className={`mt-1 text-xl font-bold tabular-nums 2xl:text-2xl ${alert ? "text-red-600" : "text-slate-900"}`}>
         {value}
       </div>
     </Link>
@@ -67,7 +70,7 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader title="Dashboard" subtitle="Portfolio snapshot" />
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         <StatCard label="Open applications" value={String(openApplications)} href="/applications" />
         <StatCard label="Active loans" value={String(activeLoans)} href="/loans" />
         <StatCard label="In arrears" value={String(arrearsLoans)} href="/loans" alert={arrearsLoans > 0} />

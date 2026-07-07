@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { logout } from "@/app/login/actions";
+import { NavLink } from "@/components/NavLink";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -16,57 +17,40 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser();
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 bg-slate-900 text-slate-300">
-        <Link href="/" className="block px-5 py-4">
-          <span className="block text-base font-black uppercase tracking-widest text-ygg-400">
+      <aside className="flex w-60 shrink-0 flex-col bg-zinc-950 text-zinc-300">
+        <Link href="/" className="block border-b border-zinc-800/80 px-5 py-5">
+          <span className="block text-lg font-black uppercase tracking-widest text-ygg-400">
             Yellowgate
           </span>
-          <span className="block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+          <span className="block text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-500">
             Loan Management
           </span>
         </Link>
-        <nav className="flex-1 space-y-0.5 px-2">
+        <nav className="flex-1 space-y-1 px-3 py-4">
           {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="block rounded px-3 py-2 text-sm font-medium hover:bg-slate-800 hover:text-white"
-            >
-              {item.label}
-            </Link>
+            <NavLink key={item.href} href={item.href} label={item.label} />
           ))}
-          <div className="pt-4 text-xs font-semibold uppercase tracking-wide text-slate-500 px-3">
+          <div className="px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-600">
             Admin
           </div>
-          {can(user, "audit:view") && (
-            <Link
-              href="/audit"
-              className="block rounded px-3 py-2 text-sm font-medium hover:bg-slate-800 hover:text-white"
-            >
-              Audit log
-            </Link>
-          )}
-          {can(user, "users:manage") && (
-            <Link
-              href="/settings/users"
-              className="block rounded px-3 py-2 text-sm font-medium hover:bg-slate-800 hover:text-white"
-            >
-              Staff
-            </Link>
-          )}
+          {can(user, "audit:view") && <NavLink href="/audit" label="Audit log" />}
+          {can(user, "users:manage") && <NavLink href="/settings/users" label="Staff" />}
         </nav>
-        <div className="border-t border-slate-800 px-5 py-3 text-xs">
-          <div className="font-medium text-white">{user.name}</div>
-          <div className="capitalize text-slate-400">{user.role}</div>
+        <div className="border-t border-zinc-800/80 px-5 py-4 text-xs">
+          <div className="font-semibold text-white">{user.name}</div>
+          <div className="capitalize text-zinc-500">{user.role}</div>
           <form action={logout}>
-            <button type="submit" className="mt-2 text-slate-400 underline hover:text-white cursor-pointer">
+            <button
+              type="submit"
+              className="mt-2 cursor-pointer text-zinc-500 underline-offset-2 hover:text-ygg-400 hover:underline"
+            >
               Sign out
             </button>
           </form>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-b border-slate-200 bg-white px-6 py-2.5">
+        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-6 py-3 backdrop-blur">
           <form action="/search" method="GET" className="max-w-md">
             <input
               type="search"
@@ -76,7 +60,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             />
           </form>
         </header>
-        <main className="min-w-0 flex-1 p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

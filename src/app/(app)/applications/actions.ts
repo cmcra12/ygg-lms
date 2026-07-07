@@ -356,13 +356,16 @@ export async function runPpsrSearch(applicationId: number): Promise<void> {
 
 // --- Convert an approved application into a loan account ----------------------
 
+// Contract numbers run sequentially in the YGG51600, YGG51601, … series.
+const CONTRACT_SERIES_START = 51599;
+
 async function nextContractNumber(): Promise<string> {
   const rows = await db.select({ contractNumber: loans.contractNumber }).from(loans);
   const max = rows.reduce((m, r) => {
     const n = Number(r.contractNumber.replace(/\D/g, ""));
     return Number.isFinite(n) && n > m ? n : m;
-  }, 0);
-  return `YGG-${String(max + 1).padStart(5, "0")}`;
+  }, CONTRACT_SERIES_START);
+  return `YGG${max + 1}`;
 }
 
 export async function convertApplication(

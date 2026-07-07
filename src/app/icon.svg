@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#ffc72c"/>
+  <rect width="64" height="64" rx="12" fill="#ffd100"/>
   <!-- stylised gate -->
-  <g stroke="#1e293b" stroke-width="5" stroke-linecap="round">
+  <g stroke="#0c0a09" stroke-width="5" stroke-linecap="round">
     <line x1="14" y1="50" x2="14" y2="18"/>
     <line x1="50" y1="50" x2="50" y2="18"/>
     <line x1="32" y1="50" x2="32" y2="26"/>
