@@ -42,6 +42,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <NavLink key={item.href} href={item.href} label={item.label} />
           ))}
           <div className="px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-600">
+            Searches
+          </div>
+          <NavLink href="/searches/new?type=ppsr" label="PPSR" />
+          <NavLink href="/searches/new?type=equifax_title" label="Equifax Title" />
+          <NavLink href="/searches/new?type=equifax_name" label="Equifax Name Browse" />
+          <NavLink href="/searches/new?type=equifax_credit" label="Equifax Credit" />
+          <NavLink href="/searches/new?type=court" label="Court Data" />
+          <NavLink href="/searches" label="Search history" exact />
+          <div className="px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-600">
             Admin
           </div>
           {can(user, "audit:view") && <NavLink href="/audit" label="Audit log" />}

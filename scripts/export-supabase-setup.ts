@@ -33,6 +33,7 @@ const TABLES: PgTable[] = [
   t.directDebitAuthorities,
   t.ppsrRegistrations,
   t.ppsrEvents,
+  t.searches,
   t.auditLog,
 ];
 

@@ -137,6 +137,18 @@ const newLoan = await page.textContent("body");
 check("convert to loan", newLoan.includes("YGG51600") && newLoan.includes("Assets on this account"));
 check("PMSI registered on convert", newLoan.includes("Atlas Copco"));
 
+// Searches: run an Equifax credit search saved to a customer
+await page.goto(BASE + "/searches/new?type=equifax_credit");
+await page.selectOption('select[name="customerId"]', { label: "Redgum Haulage Pty Ltd" });
+await page.fill('input[name="subject"]', "Redgum Haulage Pty Ltd");
+await page.click('main button[type="submit"]');
+await page.waitForURL(/\/customers\/\d+$/, { timeout: 15000 });
+const custAfterSearch = await page.textContent("body");
+check("search saved to customer", custAfterSearch.includes("Search history") && custAfterSearch.includes("Score 720"));
+await page.goto(BASE + "/searches");
+const searchHistory = await page.textContent("body");
+check("search history page", searchHistory.includes("Equifax credit search") && searchHistory.includes("Redgum Haulage"));
+
 // RBAC: operations user doesn't get the Staff admin link
 const ctx2 = await browser.newContext();
 const p2 = await ctx2.newPage();

@@ -1,11 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
-export function NavLink({ href, label }: { href: string; label: string }) {
+export function NavLink({ href, label, exact }: { href: string; label: string; exact?: boolean }) {
   const pathname = usePathname();
-  const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const searchParams = useSearchParams();
+
+  const [base, query] = href.split("?");
+  let active: boolean;
+  if (query) {
+    // e.g. /searches/new?type=ppsr — active only when the type matches too.
+    const want = new URLSearchParams(query);
+    active =
+      pathname === base && [...want.entries()].every(([k, v]) => searchParams.get(k) === v);
+  } else if (exact || base === "/") {
+    active = pathname === base;
+  } else {
+    active = pathname === base || pathname.startsWith(base + "/");
+  }
+
   return (
     <Link
       href={href}

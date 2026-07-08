@@ -691,6 +691,27 @@ for (const seed of openApplicationSeeds) {
   }
 }
 
+// --- Saved searches ------------------------------------------------------------
+
+const searchSeeds = [
+  { customerIdx: 0, type: "equifax_credit", subject: "Harbour City Earthmoving Pty Ltd", result: "Score 720 — clear (stub)", reference: "EFX-C-284113" },
+  { customerIdx: 0, type: "equifax_name", subject: "Tony Rossi", result: "Name browse complete — no adverse matches located (stub)", reference: "EFX-N-284114" },
+  { customerIdx: 1, type: "ppsr", subject: "6F5000000MB472119", result: "No adverse registrations found (stub)", reference: "PPSR-771202" },
+  { customerIdx: 7, type: "court", subject: "Kalgoorlie Drilling Services Pty Ltd", result: "No court records located (stub)", reference: "CDS-455913" },
+  { customerIdx: 9, type: "equifax_title", subject: "18 Quarry Lane, New Norfolk TAS 7140", result: "Title search complete — ownership and encumbrance summary returned (stub)", reference: "EFX-T-118240" },
+] as const;
+for (const seed of searchSeeds) {
+  await insert(t.searches, "search", {
+    type: seed.type,
+    customerId: customers[seed.customerIdx].id,
+    subject: seed.subject,
+    result: seed.result,
+    reference: seed.reference,
+    runBy: credit.id,
+    createdAt: now(),
+  });
+}
+
 const counts = {
   users: (await db.select().from(t.users)).length,
   customers: (await db.select().from(t.customers)).length,
@@ -703,6 +724,7 @@ const counts = {
   schedules: (await db.select().from(t.loanSchedules)).length,
   transactions: (await db.select().from(t.transactions)).length,
   ppsr: (await db.select().from(t.ppsrRegistrations)).length,
+  searches: (await db.select().from(t.searches)).length,
   auditEntries: (await db.select().from(t.auditLog)).length,
 };
 console.log("Seed complete:", counts);

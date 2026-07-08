@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { assets, customerContacts, customers, insurancePolicies, loans } from "@/db/schema";
+import { assets, customerContacts, customers, insurancePolicies, loans, searches } from "@/db/schema";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { formatAbn, formatAcn } from "@/lib/abn";
-import { formatDate, formatMoney, titleCase, todaySydney } from "@/lib/format";
+import { formatDate, formatDateTime, formatMoney, titleCase, todaySydney } from "@/lib/format";
+import { SEARCH_TYPES } from "@/lib/searchTypes";
 import { PageHeader, Section, Badge, DetailList, LinkButton } from "@/components/ui";
 import { AuditTrail } from "@/components/AuditTrail";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -50,6 +51,11 @@ export default async function CustomerDetailPage({
     ;
   const customerLoans = await db.select().from(loans).where(eq(loans.customerId, customerId));
   const customerAssets = await db.select().from(assets).where(eq(assets.customerId, customerId));
+  const customerSearches = await db
+    .select()
+    .from(searches)
+    .where(eq(searches.customerId, customerId))
+    .orderBy(desc(searches.id));
 
   const canDelete = can(user, "records:delete");
   const today = todaySydney();
@@ -230,6 +236,36 @@ export default async function CustomerDetailPage({
                 {titleCase(a.status)}
               </Badge>
             </Link>
+          ))}
+        </div>
+      </Section>
+
+      <Section
+        title="Search history"
+        actions={
+          <LinkButton href={`/searches/new?customerId=${customer.id}`}>New search</LinkButton>
+        }
+      >
+        <div className="card divide-y divide-slate-100">
+          {customerSearches.length === 0 && (
+            <div className="px-4 py-6 text-center text-sm text-slate-400">
+              No searches run for this customer yet.
+            </div>
+          )}
+          {customerSearches.map((s) => (
+            <div key={s.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
+              <span className="w-40 shrink-0 tabular-nums text-slate-500">
+                {formatDateTime(s.createdAt)}
+              </span>
+              <span className="w-60 shrink-0">
+                <Badge color="blue">{SEARCH_TYPES[s.type].label}</Badge>
+              </span>
+              <span className="w-56 shrink-0 truncate font-medium">{s.subject}</span>
+              <span className="min-w-0 flex-1 truncate text-slate-500">
+                {s.result}
+                {s.reference ? ` · ${s.reference}` : ""}
+              </span>
+            </div>
           ))}
         </div>
       </Section>

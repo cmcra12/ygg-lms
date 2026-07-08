@@ -337,6 +337,29 @@ export const ppsrEvents = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Searches — PPSR, Equifax (title / name browse / credit) and court data.
+// Every search run is saved here, linked to the customer it was run for.
+// ---------------------------------------------------------------------------
+
+export const searches = pgTable(
+  "searches",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    type: text("type", {
+      enum: ["ppsr", "equifax_title", "equifax_name", "equifax_credit", "court"],
+    }).notNull(),
+    customerId: integer("customer_id").references(() => customers.id),
+    subject: text("subject").notNull(), // what was searched: name, VIN, address, company…
+    result: text("result"), // summary of the provider response (stub or manual entry)
+    reference: text("reference"), // provider reference number
+    notes: text("notes"),
+    runBy: integer("run_by").references(() => users.id),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [index("searches_customer_idx").on(t.customerId), index("searches_type_idx").on(t.type)],
+);
+
+// ---------------------------------------------------------------------------
 // Cross-cutting
 // ---------------------------------------------------------------------------
 
