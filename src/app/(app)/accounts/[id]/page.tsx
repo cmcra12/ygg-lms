@@ -47,7 +47,7 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
     ;
   let running = 0;
   const ledger = txns.map((t) => {
-    running += t.amountExGstCents + t.gstCents;
+    running += t.amountExGstCents;
     return { ...t, running };
   });
   const balance = running;
@@ -74,9 +74,9 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
           items={[
             ["Start date", formatDate(loan.startDate)],
             ["End date", formatDate(loan.endDate)],
-            ["Term", `${loan.termMonths} months`],
+            ["Minimum return", `${loan.termMonths} months`],
             ["Payment frequency", titleCase(loan.paymentFrequency)],
-            ["Balance (inc GST)", <strong key="b">{formatMoney(balance)}</strong>],
+            ["Balance (ex GST)", <strong key="b">{formatMoney(balance)}</strong>],
             [
               "Direct debit",
               ddr
@@ -97,7 +97,7 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
             <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
               <span className="w-40 shrink-0 font-medium">{s.code}</span>
               <span className="w-40 shrink-0 tabular-nums">
-                {formatMoney(s.amountExGstCents)} + {formatMoney(s.gstCents)} GST
+                {formatMoney(s.amountExGstCents)} ex GST
               </span>
               <span className="w-28 shrink-0 capitalize text-slate-600">{s.frequency}</span>
               <span className="text-slate-600">Next run {formatDate(s.nextRunDate)}</span>
@@ -143,10 +143,9 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
             { key: "description", header: "Description" },
             { key: "reference", header: "Reference" },
             { key: "source", header: "Source" },
-            { key: "exGst", header: "Ex GST", align: "right" },
-            { key: "gst", header: "GST", align: "right" },
-            { key: "total", header: "Total", align: "right" },
-            { key: "running", header: "Balance", align: "right" },
+            { key: "exGst", header: "Amount (ex GST)", align: "right" },
+            { key: "gst", header: "GST (tracked)", align: "right" },
+            { key: "running", header: "Balance (ex GST)", align: "right" },
           ]}
           rows={ledger.map((t) => ({
             cells: {
@@ -157,10 +156,6 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
               source: titleCase(t.source),
               exGst: { text: formatMoney(t.amountExGstCents), sort: t.amountExGstCents },
               gst: { text: formatMoney(t.gstCents), sort: t.gstCents },
-              total: {
-                text: formatMoney(t.amountExGstCents + t.gstCents),
-                sort: t.amountExGstCents + t.gstCents,
-              },
               running: { text: formatMoney(t.running), sort: t.running },
             },
           }))}

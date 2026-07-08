@@ -129,7 +129,7 @@ export default async function ApplicationDetailPage({
             ],
             ["Rental rate (RR)", application.rentalRatePercent ? `${application.rentalRatePercent}%` : "—"],
             ["ROI", application.roiPercent ? `${application.roiPercent}%` : "—"],
-            ["Term", application.termMonths ? `${application.termMonths} months` : "—"],
+            ["Minimum return", application.termMonths ? `${application.termMonths} months` : "—"],
             [
               "Brokerage ex GST",
               application.brokerageExGstCents != null ? formatMoney(application.brokerageExGstCents) : "—",

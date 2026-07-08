@@ -97,9 +97,9 @@ export default async function DashboardPage() {
                   {customer.name} · {txn.description ?? txn.type.replace("_", " ")}
                 </span>
                 <span
-                  className={`shrink-0 tabular-nums ${txn.amountExGstCents + txn.gstCents < 0 ? "text-emerald-700" : ""}`}
+                  className={`shrink-0 tabular-nums ${txn.amountExGstCents < 0 ? "text-emerald-700" : ""}`}
                 >
-                  {formatMoney(txn.amountExGstCents + txn.gstCents)}
+                  {formatMoney(txn.amountExGstCents)}
                 </span>
               </Link>
             ))}

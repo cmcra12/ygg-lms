@@ -41,7 +41,7 @@ export default async function ApplicationsPage() {
           { key: "source", header: "Source" },
           { key: "broker", header: "Broker" },
           { key: "value", header: "Value ex GST", align: "right" },
-          { key: "term", header: "Term", align: "right" },
+          { key: "term", header: "Min return", align: "right" },
           { key: "owner", header: "Owner" },
           { key: "created", header: "Created" },
         ]}

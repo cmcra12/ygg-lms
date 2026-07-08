@@ -20,7 +20,7 @@ export default async function LoansPage() {
       .select({
         loanId: transactions.loanId,
         // sum() over integers is bigint in Postgres — cast so the driver returns a number
-        balance: sql<number>`coalesce(sum(${transactions.amountExGstCents} + ${transactions.gstCents}), 0)::int`,
+        balance: sql<number>`coalesce(sum(${transactions.amountExGstCents}), 0)::int`,
       })
       .from(transactions)
       .where(inArray(transactions.loanId, loanIds))
@@ -33,14 +33,14 @@ export default async function LoansPage() {
     <>
       <PageHeader title="Accounts" subtitle={`${rows.length} rental accounts`} />
       <DataTable
-        filename="loans"
+        filename="accounts"
         columns={[
           { key: "contract", header: "Contract" },
           { key: "customer", header: "Customer" },
           { key: "start", header: "Start" },
-          { key: "term", header: "Term", align: "right" },
+          { key: "term", header: "Min return", align: "right" },
           { key: "frequency", header: "Frequency" },
-          { key: "balance", header: "Balance (inc GST)", align: "right" },
+          { key: "balance", header: "Balance (ex GST)", align: "right" },
           { key: "status", header: "Status" },
           { key: "arrears", header: "Arrears" },
         ]}

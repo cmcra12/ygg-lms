@@ -75,7 +75,7 @@ export async function saveApplication(
   const termRaw = String(formData.get("termMonths") ?? "").trim();
   const termMonths = termRaw ? Number(termRaw) : null;
   if (termRaw && (!Number.isInteger(termMonths) || termMonths! <= 0 || termMonths! > 120)) {
-    return { error: "Term must be a whole number of months (1–120)." };
+    return { error: "Minimum return must be a whole number of months (1–120)." };
   }
 
   const brokerRaw = String(formData.get("brokerId") ?? "");
@@ -383,7 +383,7 @@ export async function convertApplication(
     return { error: "Only approved applications can be converted to a loan account." };
   }
   if (!application.termMonths) {
-    return { error: "Set the term on the application before converting." };
+    return { error: "Set the minimum return (months) on the application before converting." };
   }
 
   const links = await db

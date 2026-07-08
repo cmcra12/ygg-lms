@@ -33,13 +33,13 @@ export default async function CustomerPaymentsPage({
 
   const totalReceived = payments
     .filter((t) => t.type === "payment")
-    .reduce((sum, t) => sum + t.amountExGstCents + t.gstCents, 0);
+    .reduce((sum, t) => sum + t.amountExGstCents, 0);
 
   return (
     <>
       <PageHeader
         title={`Payment history — ${customer.name}`}
-        subtitle={`${payments.filter((p) => p.type === "payment").length} payments received, total ${formatMoney(-totalReceived)} inc GST`}
+        subtitle={`${payments.filter((p) => p.type === "payment").length} payments received, total ${formatMoney(-totalReceived)} ex GST`}
         actions={<LinkButton href={`/customers/${customerId}`}>Back to customer</LinkButton>}
       />
       <DataTable
@@ -50,11 +50,11 @@ export default async function CustomerPaymentsPage({
           { key: "type", header: "Type" },
           { key: "reference", header: "Reference" },
           { key: "source", header: "Source" },
-          { key: "amount", header: "Amount (inc GST)", align: "right" },
+          { key: "amount", header: "Amount (ex GST)", align: "right" },
         ]}
         rows={payments.map((t) => {
           const loan = loanById.get(t.loanId)!;
-          const total = t.amountExGstCents + t.gstCents;
+          const total = t.amountExGstCents;
           return {
             href: `/accounts/${loan.id}`,
             cells: {

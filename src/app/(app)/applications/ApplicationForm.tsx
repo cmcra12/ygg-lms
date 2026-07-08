@@ -118,10 +118,10 @@ export function ApplicationForm({
           <input name="roiPercent" defaultValue={initial.roiPercent ?? ""} className="field-input" />
         </div>
         <div>
-          <label className="field-label">Term (months)</label>
+          <label className="field-label">Minimum return (months)</label>
           <input
             name="termMonths"
-            defaultValue={initial.termMonths != null ? String(initial.termMonths) : ""}
+            defaultValue={initial.termMonths != null ? String(initial.termMonths) : "12"}
             className="field-input"
           />
         </div>
