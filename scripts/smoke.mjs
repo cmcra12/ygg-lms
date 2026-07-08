@@ -107,24 +107,33 @@ await page.waitForURL(/\/applications\/\d+$/);
 const appDetail = await page.textContent("body");
 check(
   "application detail",
-  appDetail.includes("Originations checklist") && appDetail.includes("Deal snapshot"),
+  appDetail.includes("Deal snapshot") && appDetail.includes("Business information") && appDetail.includes("Workflows"),
+);
+
+// Applicants tab shows the seeded applicant with A&L statement
+const appUrlBase = page.url();
+await page.goto(appUrlBase + "?tab=applicants");
+const applicantsTab = await page.textContent("body");
+check(
+  "applicants tab",
+  applicantsTab.includes("Applicant 1") && applicantsTab.includes("Net worth"),
 );
 
 // Stubbed integration run: Info Agent lookup marks its checklist item done
+await page.goto(appUrlBase + "?tab=checklist");
 await page.click("text=Run Info Agent lookup (stub)");
 await page.waitForSelector("text=Company status: Registered", { timeout: 15000 });
 check("info agent stub run", true);
 
 // Document generation downloads a .docx and records it
-const appUrl = page.url();
-const docResponse = await page.request.get(appUrl + "/documents/credit-approval");
+const docResponse = await page.request.get(appUrlBase + "/documents/credit-approval");
 check(
   "generate CA docx",
   docResponse.ok() &&
     (docResponse.headers()["content-type"] ?? "").includes("wordprocessingml"),
   String(docResponse.status()),
 );
-await page.reload();
+await page.goto(appUrlBase + "?tab=documents");
 check("CA recorded on application", (await page.textContent("body")).includes("CA-APP-2026-"));
 
 // Convert the approved application into a loan account

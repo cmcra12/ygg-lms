@@ -151,11 +151,70 @@ export const applications = pgTable(
     roiPercent: text("roi_percent"),
     termMonths: integer("term_months"),
     brokerageExGstCents: integer("brokerage_ex_gst_cents"),
+    // Business information from the YGG application form (YGG0094).
+    tradingName: text("trading_name"),
+    entityType: text("entity_type", {
+      enum: ["pty_ltd", "limited", "sole_trader", "trust", "partnership"],
+    }),
+    trusteeType: text("trustee_type", { enum: ["company", "individual"] }),
+    trusteeName: text("trustee_name"),
+    yearsTrading: integer("years_trading"),
+    natureOfBusiness: text("nature_of_business"), // e.g. Civil, Mining
+    businessPhone: text("business_phone"),
+    businessAddressLine1: text("business_address_line1"),
+    businessSuburb: text("business_suburb"),
+    businessState: text("business_state"),
+    businessPostcode: text("business_postcode"),
+    premises: text("premises", { enum: ["rent", "own"] }),
+    employeesCount: integer("employees_count"),
+    machinesInFleet: integer("machines_in_fleet"),
     notes: text("notes"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
   (t) => [index("applications_customer_idx").on(t.customerId)],
+);
+
+// Applicant 1 / Applicant 2 from the YGG application form, including the
+// personal assets & liabilities statement each applicant completes.
+export const applicationApplicants = pgTable(
+  "application_applicants",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    applicationId: integer("application_id").notNull().references(() => applications.id),
+    position: integer("position").notNull(), // 1 or 2
+    firstName: text("first_name").notNull(),
+    middleName: text("middle_name"),
+    surname: text("surname").notNull(),
+    dateOfBirth: text("date_of_birth"),
+    gender: text("gender", { enum: ["male", "female"] }),
+    yearsIndustryExperience: integer("years_industry_experience"),
+    cityCountryOfBirth: text("city_country_of_birth"),
+    driversLicenceNo: text("drivers_licence_no"),
+    driversLicenceExpiry: text("drivers_licence_expiry"),
+    driversCardNo: text("drivers_card_no"),
+    medicareNo: text("medicare_no"),
+    medicarePosition: text("medicare_position"),
+    medicareExpiry: text("medicare_expiry"),
+    mobile: text("mobile"),
+    email: text("email"),
+    homeAddressLine1: text("home_address_line1"),
+    homeSuburb: text("home_suburb"),
+    homeState: text("home_state"),
+    homePostcode: text("home_postcode"),
+    homeOwnership: text("home_ownership", { enum: ["renting", "own"] }),
+    previousAddress: text("previous_address"), // if at current address < 12 months
+    privacyAcknowledged: boolean("privacy_acknowledged").notNull().default(false),
+    // Personal assets & liabilities statement (totals; detail as free text).
+    assetsDetail: text("assets_detail"),
+    liabilitiesDetail: text("liabilities_detail"),
+    totalAssetsCents: integer("total_assets_cents"),
+    totalLiabilitiesCents: integer("total_liabilities_cents"),
+    comments: text("comments"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [index("application_applicants_app_idx").on(t.applicationId)],
 );
 
 export const applicationAssets = pgTable(

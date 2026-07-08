@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
+  applicationApplicants,
   applicationAssets,
   applicationChecklistItems,
   applications,
@@ -27,6 +28,17 @@ async function nextApplicationReference(): Promise<string> {
   const [latest] = await db.select().from(applications).orderBy(desc(applications.id)).limit(1);
   const year = todaySydney().slice(0, 4);
   return `APP-${year}-${String((latest?.id ?? 0) + 1).padStart(4, "0")}`;
+}
+
+function intOrNull(raw: FormDataEntryValue | null): number | null {
+  const cleaned = String(raw ?? "").trim();
+  if (!cleaned) return null;
+  const n = Number(cleaned);
+  return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+function textOrNull(raw: FormDataEntryValue | null): string | null {
+  return String(raw ?? "").trim() || null;
 }
 
 function parsePercent(raw: string, label: string): { value: string | null; error?: string } {
@@ -91,6 +103,21 @@ export async function saveApplication(
     roiPercent: roi.value,
     termMonths,
     brokerageExGstCents,
+    // Business information (YGG application form).
+    tradingName: textOrNull(formData.get("tradingName")),
+    entityType: textOrNull(formData.get("entityType")),
+    trusteeType: textOrNull(formData.get("trusteeType")),
+    trusteeName: textOrNull(formData.get("trusteeName")),
+    yearsTrading: intOrNull(formData.get("yearsTrading")),
+    natureOfBusiness: textOrNull(formData.get("natureOfBusiness")),
+    businessPhone: textOrNull(formData.get("businessPhone")),
+    businessAddressLine1: textOrNull(formData.get("businessAddressLine1")),
+    businessSuburb: textOrNull(formData.get("businessSuburb")),
+    businessState: textOrNull(formData.get("businessState")),
+    businessPostcode: textOrNull(formData.get("businessPostcode")),
+    premises: textOrNull(formData.get("premises")),
+    employeesCount: intOrNull(formData.get("employeesCount")),
+    machinesInFleet: intOrNull(formData.get("machinesInFleet")),
     notes: String(formData.get("notes") ?? "").trim() || null,
     updatedAt: now,
   };
@@ -121,6 +148,95 @@ export async function saveApplication(
   }
   revalidatePath("/applications");
   redirect(`/applications/${id}`);
+}
+
+// --- Applicants (Applicant 1 / Applicant 2 on the application form) ---------
+
+export async function saveApplicant(
+  applicationId: number,
+  applicantId: number | null,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  assertCan(user, "records:write");
+
+  const [application] = await db.select().from(applications).where(eq(applications.id, applicationId));
+  if (!application) return { error: "Application not found." };
+
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const surname = String(formData.get("surname") ?? "").trim();
+  if (!firstName || !surname) return { error: "First name and surname are required." };
+
+  const totalAssetsRaw = String(formData.get("totalAssets") ?? "").trim();
+  const totalAssetsCents = totalAssetsRaw ? parseMoneyToCents(totalAssetsRaw) : null;
+  if (totalAssetsRaw && totalAssetsCents == null) return { error: "Total assets must be a valid amount." };
+  const totalLiabilitiesRaw = String(formData.get("totalLiabilities") ?? "").trim();
+  const totalLiabilitiesCents = totalLiabilitiesRaw ? parseMoneyToCents(totalLiabilitiesRaw) : null;
+  if (totalLiabilitiesRaw && totalLiabilitiesCents == null) {
+    return { error: "Total liabilities must be a valid amount." };
+  }
+
+  const existing = await db
+    .select()
+    .from(applicationApplicants)
+    .where(eq(applicationApplicants.applicationId, applicationId));
+  if (applicantId == null && existing.length >= 2) {
+    return { error: "The application form covers a maximum of two applicants." };
+  }
+
+  const now = new Date().toISOString();
+  const values = {
+    applicationId,
+    position: applicantId == null ? (existing.some((a) => a.position === 1) ? 2 : 1) : undefined,
+    firstName,
+    middleName: textOrNull(formData.get("middleName")),
+    surname,
+    dateOfBirth: textOrNull(formData.get("dateOfBirth")),
+    gender: textOrNull(formData.get("gender")),
+    yearsIndustryExperience: intOrNull(formData.get("yearsIndustryExperience")),
+    cityCountryOfBirth: textOrNull(formData.get("cityCountryOfBirth")),
+    driversLicenceNo: textOrNull(formData.get("driversLicenceNo")),
+    driversLicenceExpiry: textOrNull(formData.get("driversLicenceExpiry")),
+    driversCardNo: textOrNull(formData.get("driversCardNo")),
+    medicareNo: textOrNull(formData.get("medicareNo")),
+    medicarePosition: textOrNull(formData.get("medicarePosition")),
+    medicareExpiry: textOrNull(formData.get("medicareExpiry")),
+    mobile: textOrNull(formData.get("mobile")),
+    email: textOrNull(formData.get("email")),
+    homeAddressLine1: textOrNull(formData.get("homeAddressLine1")),
+    homeSuburb: textOrNull(formData.get("homeSuburb")),
+    homeState: textOrNull(formData.get("homeState")),
+    homePostcode: textOrNull(formData.get("homePostcode")),
+    homeOwnership: textOrNull(formData.get("homeOwnership")),
+    previousAddress: textOrNull(formData.get("previousAddress")),
+    privacyAcknowledged: formData.get("privacyAcknowledged") === "on",
+    assetsDetail: textOrNull(formData.get("assetsDetail")),
+    liabilitiesDetail: textOrNull(formData.get("liabilitiesDetail")),
+    totalAssetsCents,
+    totalLiabilitiesCents,
+    comments: textOrNull(formData.get("comments")),
+    updatedAt: now,
+  };
+
+  if (applicantId == null) {
+    await auditedInsert(user, applicationApplicants, "application_applicant", {
+      ...values,
+      createdAt: now,
+    });
+  } else {
+    const { position: _ignored, ...updateValues } = values;
+    await auditedUpdate(user, applicationApplicants, "application_applicant", applicantId, updateValues);
+  }
+  revalidatePath(`/applications/${applicationId}`);
+  redirect(`/applications/${applicationId}?tab=applicants`);
+}
+
+export async function deleteApplicant(applicationId: number, applicantId: number): Promise<void> {
+  const user = await requireUser();
+  assertCan(user, "records:delete");
+  await auditedDelete(user, applicationApplicants, "application_applicant", applicantId);
+  revalidatePath(`/applications/${applicationId}`);
 }
 
 // --- Assets on the application ---------------------------------------------

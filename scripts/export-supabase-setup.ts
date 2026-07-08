@@ -21,6 +21,7 @@ const TABLES: PgTable[] = [
   t.customerContacts,
   t.externalParties,
   t.applications,
+  t.applicationApplicants,
   t.loans,
   t.assets,
   t.applicationAssets,
