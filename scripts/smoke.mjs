@@ -30,7 +30,7 @@ await page.click('main button[type="submit"]');
 await page.waitForURL(BASE + "/", { timeout: 15000 });
 check("login → dashboard", true);
 const dash = await page.textContent("body");
-check("dashboard stats", dash.includes("Active loans") && dash.includes("In arrears"));
+check("dashboard stats", dash.includes("Active accounts") && dash.includes("In arrears"));
 
 // Customers list
 await page.goto(BASE + "/customers");
@@ -52,18 +52,21 @@ await page.waitForURL(/\/payments$/);
 check("payment history", (await page.textContent("body")).includes("payments received"));
 
 // Loans + read-only ledger
-await page.goto(BASE + "/loans");
+await page.goto(BASE + "/accounts");
 const loansTxt = await page.textContent("body");
-check("loans list", loansTxt.includes("YGG515") && loansTxt.includes("Arrears"));
+check("accounts list", loansTxt.includes("YGG515") && loansTxt.includes("Arrears"));
 await page.click("text=YGG51591");
-await page.waitForURL(/\/loans\/\d+$/);
+await page.waitForURL(/\/accounts\/\d+$/);
 const ledger = await page.textContent("body");
 check("loan ledger", ledger.includes("Ledger (read-only)") && ledger.includes("RENT") && ledger.includes("Balance"));
 
 // Master asset register
 await page.goto(BASE + "/assets");
 const assetsTxt = await page.textContent("body");
-check("asset register", assetsTxt.includes("Caterpillar") && assetsTxt.includes("VIN"));
+check("asset register", assetsTxt.includes("Caterpillar") && assetsTxt.includes("Industry"));
+await page.selectOption('select:has(option:has-text("Industry: all"))', "Mining");
+const filtered = await page.textContent("tbody");
+check("industry filter", filtered.includes("Sandvik") && !filtered.includes("Caterpillar"));
 
 // Global search: rego and contract number
 await page.goto(BASE + "/search?q=XT29GH");
@@ -129,9 +132,9 @@ await page.goto(BASE + "/applications");
 await page.click("text=APP-2026-0011");
 await page.waitForURL(/\/applications\/\d+$/);
 await page.click('button:has-text("Open loan account")');
-await page.waitForURL(/\/loans\/\d+$/, { timeout: 20000 });
+await page.waitForURL(/\/accounts\/\d+$/, { timeout: 20000 });
 const newLoan = await page.textContent("body");
-check("convert to loan", newLoan.includes("YGG51600") && newLoan.includes("Assets on this loan"));
+check("convert to loan", newLoan.includes("YGG51600") && newLoan.includes("Assets on this account"));
 check("PMSI registered on convert", newLoan.includes("Atlas Copco"));
 
 // RBAC: operations user doesn't get the Staff admin link

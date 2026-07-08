@@ -46,7 +46,7 @@ export default async function CustomerPaymentsPage({
         filename={`payments-${customer.code}`}
         columns={[
           { key: "date", header: "Date" },
-          { key: "loan", header: "Contract" },
+          { key: "loan", header: "Account" },
           { key: "type", header: "Type" },
           { key: "reference", header: "Reference" },
           { key: "source", header: "Source" },
@@ -56,7 +56,7 @@ export default async function CustomerPaymentsPage({
           const loan = loanById.get(t.loanId)!;
           const total = t.amountExGstCents + t.gstCents;
           return {
-            href: `/loans/${loan.id}`,
+            href: `/accounts/${loan.id}`,
             cells: {
               date: { text: formatDate(t.date), sort: t.date },
               loan: loan.contractNumber,

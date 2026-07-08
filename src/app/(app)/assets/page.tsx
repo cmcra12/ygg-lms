@@ -24,15 +24,17 @@ export default async function AssetsPage() {
       />
       <DataTable
         filename="asset-register"
+        filters={["industry", "category", "status", "customer"]}
         columns={[
           { key: "description", header: "Description" },
           { key: "category", header: "Category" },
+          { key: "industry", header: "Industry" },
           { key: "vin", header: "VIN" },
           { key: "rego", header: "Rego" },
           { key: "serial", header: "Serial" },
           { key: "value", header: "Value ex GST", align: "right" },
           { key: "customer", header: "Customer" },
-          { key: "loan", header: "Loan" },
+          { key: "loan", header: "Account" },
           { key: "status", header: "Status" },
         ]}
         rows={rows.map(({ asset, customer, loan }) => ({
@@ -40,6 +42,7 @@ export default async function AssetsPage() {
           cells: {
             description: asset.description,
             category: asset.category,
+            industry: asset.industry,
             vin: asset.vin,
             rego: asset.rego,
             serial: asset.serialNumber,

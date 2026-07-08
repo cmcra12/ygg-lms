@@ -183,15 +183,15 @@ export default async function CustomerDetailPage({
         </div>
       </Section>
 
-      <Section title="Loans">
+      <Section title="Accounts">
         <div className="card divide-y divide-slate-100">
           {customerLoans.length === 0 && (
-            <div className="px-4 py-6 text-center text-sm text-slate-400">No loan accounts.</div>
+            <div className="px-4 py-6 text-center text-sm text-slate-400">No accounts.</div>
           )}
           {customerLoans.map((l) => (
             <Link
               key={l.id}
-              href={`/loans/${l.id}`}
+              href={`/accounts/${l.id}`}
               className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-ygg-50"
             >
               <span className="w-32 shrink-0 font-medium">{l.contractNumber}</span>

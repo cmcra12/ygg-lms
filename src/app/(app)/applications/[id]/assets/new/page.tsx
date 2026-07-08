@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { applications, customers } from "@/db/schema";
 import { PageHeader } from "@/components/ui";
 import { FormFrame } from "@/components/FormFrame";
+import { INDUSTRIES } from "@/lib/industries";
 import { addApplicationAsset } from "../../../actions";
 
 export default async function NewApplicationAssetPage({
@@ -36,6 +37,17 @@ export default async function NewApplicationAssetPage({
           <div>
             <label className="field-label">Category</label>
             <input name="category" className="field-input" placeholder="e.g. Excavator, Prime Mover" />
+          </div>
+          <div>
+            <label className="field-label">Industry</label>
+            <select name="industry" defaultValue="" className="field-input">
+              <option value="">— Select —</option>
+              {INDUSTRIES.map((i) => (
+                <option key={i} value={i}>
+                  {i}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="field-label">Value ex GST ($)</label>

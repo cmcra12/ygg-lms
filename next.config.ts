@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./templates/**"],
   },
+  async redirects() {
+    // Loans were renamed to Accounts; keep old links working.
+    return [
+      { source: "/loans", destination: "/accounts", permanent: true },
+      { source: "/loans/:id", destination: "/accounts/:id", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

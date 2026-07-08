@@ -1,10 +1,12 @@
 "use client";
 
 import { FormFrame, type ActionState } from "@/components/FormFrame";
+import { INDUSTRIES } from "@/lib/industries";
 
 type AssetValues = {
   description?: string;
   category?: string | null;
+  industry?: string | null;
   vin?: string | null;
   rego?: string | null;
   serialNumber?: string | null;
@@ -43,6 +45,17 @@ export function AssetForm({
             className="field-input"
             placeholder="e.g. Excavator, Prime Mover"
           />
+        </div>
+        <div>
+          <label className="field-label">Industry</label>
+          <select name="industry" defaultValue={initial.industry ?? ""} className="field-input">
+            <option value="">— Select —</option>
+            {INDUSTRIES.map((i) => (
+              <option key={i} value={i}>
+                {i}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="field-label">Value ex GST ($)</label>

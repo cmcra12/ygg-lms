@@ -146,6 +146,7 @@ export async function addApplicationAsset(
   const asset = await auditedInsert<{ id: number }>(user, assets, "asset", {
     description,
     category: String(formData.get("category") ?? "").trim() || null,
+    industry: String(formData.get("industry") ?? "").trim() || null,
     vin: String(formData.get("vin") ?? "").trim().toUpperCase() || null,
     rego: String(formData.get("rego") ?? "").trim().toUpperCase() || null,
     serialNumber: String(formData.get("serialNumber") ?? "").trim() || null,
@@ -477,5 +478,5 @@ export async function convertApplication(
 
   revalidatePath("/applications");
   revalidatePath("/loans");
-  redirect(`/loans/${loan.id}`);
+  redirect(`/accounts/${loan.id}`);
 }

@@ -55,6 +55,7 @@ export async function saveAsset(
   const values = {
     description,
     category: String(formData.get("category") ?? "").trim() || null,
+    industry: String(formData.get("industry") ?? "").trim() || null,
     vin: String(formData.get("vin") ?? "").trim().toUpperCase() || null,
     rego: String(formData.get("rego") ?? "").trim().toUpperCase() || null,
     serialNumber: String(formData.get("serialNumber") ?? "").trim() || null,

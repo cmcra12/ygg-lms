@@ -63,6 +63,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
         <DetailList
           items={[
             ["Category", asset.category],
+            ["Industry", asset.industry],
             ["VIN", asset.vin],
             ["Rego", asset.rego],
             ["Serial number", asset.serialNumber],
@@ -80,7 +81,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
             [
               "Current loan",
               loan ? (
-                <Link href={`/loans/${loan.id}`} className="text-ygg-700 underline">
+                <Link href={`/accounts/${loan.id}`} className="text-ygg-700 underline">
                   {loan.contractNumber}
                 </Link>
               ) : (

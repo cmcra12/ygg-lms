@@ -100,8 +100,8 @@ export default async function ApplicationDetailPage({
             {loan && (
               <>
                 {" "}
-                <Link href={`/loans/${loan.id}`} className="text-ygg-700 underline">
-                  → Loan {loan.contractNumber}
+                <Link href={`/accounts/${loan.id}`} className="text-ygg-700 underline">
+                  → Account {loan.contractNumber}
                 </Link>
               </>
             )}

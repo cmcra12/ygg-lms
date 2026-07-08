@@ -62,18 +62,35 @@ export function DataTable({
   columns,
   rows,
   filename,
+  filters = [],
   emptyMessage = "No records.",
 }: {
   columns: ColumnDef[];
   rows: DataTableRow[];
   /** Base name for the exported CSV file. */
   filename: string;
+  /** Column keys that get a dropdown filter of their distinct values. */
+  filters?: string[];
   emptyMessage?: string;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const filterOptions = useMemo(() => {
+    const options: Record<string, string[]> = {};
+    for (const key of filters) {
+      const values = new Set<string>();
+      for (const r of rows) {
+        const text = cellText(r.cells[key]);
+        if (text) values.add(text);
+      }
+      options[key] = [...values].sort((a, b) => a.localeCompare(b, "en-AU"));
+    }
+    return options;
+  }, [rows, filters]);
 
   const visible = useMemo(() => {
     let out = rows;
@@ -82,6 +99,9 @@ export function DataTable({
       out = out.filter((r) =>
         columns.some((c) => cellText(r.cells[c.key]).toLowerCase().includes(q)),
       );
+    }
+    for (const [key, value] of Object.entries(columnFilters)) {
+      if (value) out = out.filter((r) => cellText(r.cells[key]) === value);
     }
     if (sortKey) {
       out = [...out].sort((a, b) => {
@@ -95,7 +115,7 @@ export function DataTable({
       });
     }
     return out;
-  }, [rows, columns, filter, sortKey, sortDir]);
+  }, [rows, columns, filter, columnFilters, sortKey, sortDir]);
 
   function toggleSort(key: string) {
     if (sortKey === key) {
@@ -118,7 +138,7 @@ export function DataTable({
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5">
         <input
           type="search"
           placeholder="Filter…"
@@ -126,6 +146,25 @@ export function DataTable({
           onChange={(e) => setFilter(e.target.value)}
           className="field-input max-w-xs"
         />
+        {filters.map((key) => {
+          const column = columns.find((c) => c.key === key);
+          if (!column) return null;
+          return (
+            <select
+              key={key}
+              value={columnFilters[key] ?? ""}
+              onChange={(e) => setColumnFilters((f) => ({ ...f, [key]: e.target.value }))}
+              className="w-auto rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm transition-colors focus:border-ygg-500 focus:outline-none focus:ring-2 focus:ring-ygg-400/40"
+            >
+              <option value="">{column.header}: all</option>
+              {(filterOptions[key] ?? []).map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          );
+        })}
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-slate-500">
             {visible.length} of {rows.length}

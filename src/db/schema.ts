@@ -286,6 +286,7 @@ export const assets = pgTable(
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     description: text("description").notNull(),
     category: text("category"), // e.g. Excavator, Prime Mover, Trailer
+    industry: text("industry"), // e.g. Civil & Construction, Mining, Transport
     vin: text("vin"),
     rego: text("rego"),
     serialNumber: text("serial_number"),

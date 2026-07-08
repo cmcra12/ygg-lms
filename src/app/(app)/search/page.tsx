@@ -6,7 +6,7 @@ const KIND_LABEL: Record<string, { label: string; color: "blue" | "green" | "amb
   customer: { label: "Customer", color: "blue" },
   contact: { label: "Contact", color: "green" },
   asset: { label: "Asset", color: "amber" },
-  loan: { label: "Loan", color: "slate" },
+  loan: { label: "Account", color: "slate" },
   application: { label: "Application", color: "amber" },
 };
 

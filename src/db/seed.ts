@@ -311,61 +311,62 @@ type DealSeed = {
   arrears?: boolean;
   rentExGst: number; // dollars/month
   damageWaiver?: number; // dollars/month
+  industry: string;
   assets: Array<{ description: string; category: string; vin?: string; rego?: string; serial?: string; value: number }>;
 };
 
 const deals: DealSeed[] = [
   {
-    customerIdx: 0, brokerIdx: 0, startMonthsAgo: 14, termMonths: 48, status: "active", rentExGst: 6900, damageWaiver: 345,
+    industry: "Civil & Construction", customerIdx: 0, brokerIdx: 0, startMonthsAgo: 14, termMonths: 48, status: "active", rentExGst: 6900, damageWaiver: 345,
     assets: [
       { description: "2023 Caterpillar 320 GC Excavator", category: "Excavator", vin: "CAT0320GCPKX10442", serial: "PKX10442", value: 285000 },
       { description: "2022 Custom Quad-Axle Plant Trailer", category: "Trailer", vin: "6T9T24Y0XN1088231", rego: "TP74KD", value: 68000 },
     ],
   },
   {
-    customerIdx: 1, brokerIdx: 1, startMonthsAgo: 10, termMonths: 60, status: "active", rentExGst: 8400, damageWaiver: 420,
+    industry: "Heavy Haulage", customerIdx: 1, brokerIdx: 1, startMonthsAgo: 10, termMonths: 60, status: "active", rentExGst: 8400, damageWaiver: 420,
     assets: [
       { description: "2021 Kenworth T610SAR Prime Mover", category: "Prime Mover", vin: "6F5000000MB472119", rego: "XT29GH", value: 315000 },
     ],
   },
   {
-    customerIdx: 2, brokerIdx: 0, startMonthsAgo: 8, termMonths: 36, status: "active", rentExGst: 3100,
+    industry: "Civil & Construction", customerIdx: 2, brokerIdx: 0, startMonthsAgo: 8, termMonths: 36, status: "active", rentExGst: 3100,
     assets: [
       { description: "Layher Allround Scaffold Package (400m²)", category: "Scaffolding", serial: "LAY-AR-400-8841", value: 96000 },
     ],
   },
   {
-    customerIdx: 3, brokerIdx: 2, startMonthsAgo: 6, termMonths: 48, status: "active", arrears: true, rentExGst: 11200, damageWaiver: 560,
+    industry: "Civil & Construction", customerIdx: 3, brokerIdx: 2, startMonthsAgo: 6, termMonths: 48, status: "active", arrears: true, rentExGst: 11200, damageWaiver: 560,
     assets: [
       { description: "2020 Liebherr LTM 1060-3.1 Mobile Crane", category: "Crane", vin: "W09611103LEL14887", rego: "QCR60T", value: 830000 },
     ],
   },
   {
-    customerIdx: 4, brokerIdx: null, startMonthsAgo: 5, termMonths: 36, status: "active", rentExGst: 4750, damageWaiver: 240,
+    industry: "Civil & Construction", customerIdx: 4, brokerIdx: null, startMonthsAgo: 5, termMonths: 36, status: "active", rentExGst: 4750, damageWaiver: 240,
     assets: [
       { description: "2023 Komatsu WA270-8 Wheel Loader", category: "Loader", vin: "KMTWA270CPA87330", serial: "A87330", value: 198000 },
     ],
   },
   {
-    customerIdx: 5, brokerIdx: 1, startMonthsAgo: 4, termMonths: 60, status: "active", rentExGst: 5300,
+    industry: "Transport & Logistics", customerIdx: 5, brokerIdx: 1, startMonthsAgo: 4, termMonths: 60, status: "active", rentExGst: 5300,
     assets: [
       { description: "2022 Scania P280 Rigid w/ 14-pallet Fridge Body", category: "Rigid Truck", vin: "9BSP4X20003912274", rego: "1WR5TU", value: 245000 },
     ],
   },
   {
-    customerIdx: 6, brokerIdx: 2, startMonthsAgo: 3, termMonths: 24, status: "active", rentExGst: 1450,
+    industry: "Trades & Services", customerIdx: 6, brokerIdx: 2, startMonthsAgo: 3, termMonths: 24, status: "active", rentExGst: 1450,
     assets: [
       { description: "2024 Isuzu NPR 45-155 Tradepack", category: "Light Truck", vin: "JAANPR75HR7100553", rego: "EQW38C", value: 62000 },
     ],
   },
   {
-    customerIdx: 7, brokerIdx: 0, startMonthsAgo: 26, termMonths: 24, status: "paid_out", rentExGst: 7800, damageWaiver: 390,
+    industry: "Mining", customerIdx: 7, brokerIdx: 0, startMonthsAgo: 26, termMonths: 24, status: "paid_out", rentExGst: 7800, damageWaiver: 390,
     assets: [
       { description: "2019 Sandvik DE712 Diamond Drill Rig", category: "Drill Rig", serial: "SDV-DE712-3308", value: 260000 },
     ],
   },
   {
-    customerIdx: 8, brokerIdx: null, startMonthsAgo: 7, termMonths: 36, status: "active", rentExGst: 2350,
+    industry: "Forestry", customerIdx: 8, brokerIdx: null, startMonthsAgo: 7, termMonths: 36, status: "active", rentExGst: 2350,
     assets: [
       { description: "2023 Bandit Intimidator 19XPC Wood Chipper", category: "Chipper", serial: "BND19XPC77120", value: 89000 },
       { description: "2022 Hino 300 Series 917 Tipper", category: "Light Truck", vin: "JHDVC66JJKS004811", rego: "S882BWD", value: 74000 },
@@ -416,6 +417,7 @@ for (const deal of deals) {
     const asset = await insert<{ id: number }>(t.assets, "asset", {
       description: assetSeed.description,
       category: assetSeed.category,
+      industry: deal.industry,
       vin: assetSeed.vin ?? null,
       rego: assetSeed.rego ?? null,
       serialNumber: assetSeed.serial ?? null,
@@ -618,6 +620,7 @@ const openApplicationSeeds = [
     asset: {
       description: "2024 Tigercat 632H Skidder",
       category: "Skidder",
+      industry: "Forestry",
       serial: "TC632H-20419",
       value: 152000,
     },
@@ -633,6 +636,7 @@ const openApplicationSeeds = [
     asset: {
       description: "2023 Atlas Copco XAS 188 Air Compressor Package",
       category: "Compressor",
+      industry: "Mining",
       serial: "AC-XAS188-55102",
       value: 118000,
     },
@@ -659,6 +663,7 @@ for (const seed of openApplicationSeeds) {
   const asset = await insert<{ id: number }>(t.assets, "asset", {
     description: seed.asset.description,
     category: seed.asset.category,
+    industry: seed.asset.industry,
     serialNumber: seed.asset.serial,
     valueExGstCents: seed.asset.value * 100,
     status: "active",

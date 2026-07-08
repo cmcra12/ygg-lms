@@ -84,8 +84,8 @@ export async function globalSearch(term: string, limit = 10): Promise<SearchResu
     ...loanRows.map(({ loan, customer }) => ({
       kind: "loan" as const,
       title: loan.contractNumber,
-      subtitle: `Loan for ${customer.name} · ${loan.status.replace("_", " ")}`,
-      href: `/loans/${loan.id}`,
+      subtitle: `Account for ${customer.name} · ${loan.status.replace("_", " ")}`,
+      href: `/accounts/${loan.id}`,
     })),
     ...applicationRows.map(({ application, customer }) => ({
       kind: "application" as const,

@@ -109,7 +109,7 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
         </div>
       </Section>
 
-      <Section title="Assets on this loan">
+      <Section title="Assets on this account">
         <div className="card divide-y divide-slate-100">
           {loanAssets.length === 0 && (
             <div className="px-4 py-6 text-center text-sm text-slate-400">No assets linked.</div>

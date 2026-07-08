@@ -72,8 +72,8 @@ export default async function DashboardPage() {
       <PageHeader title="Dashboard" subtitle="Portfolio snapshot" />
       <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         <StatCard label="Open applications" value={String(openApplications)} href="/applications" />
-        <StatCard label="Active loans" value={String(activeLoans)} href="/loans" />
-        <StatCard label="In arrears" value={String(arrearsLoans)} href="/loans" alert={arrearsLoans > 0} />
+        <StatCard label="Active accounts" value={String(activeLoans)} href="/accounts" />
+        <StatCard label="In arrears" value={String(arrearsLoans)} href="/accounts" alert={arrearsLoans > 0} />
         <StatCard label="Active customers" value={String(activeCustomers)} href="/customers" />
         <StatCard label="Active assets" value={String(activeAssets)} href="/assets" />
         <StatCard label="Asset value (ex GST)" value={formatMoney(portfolio?.total ?? 0)} href="/assets" />
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
             {recent.map(({ txn, loan, customer }) => (
               <Link
                 key={txn.id}
-                href={`/loans/${loan.id}`}
+                href={`/accounts/${loan.id}`}
                 className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-ygg-50"
               >
                 <span className="w-24 shrink-0 tabular-nums text-slate-500">{formatDate(txn.date)}</span>

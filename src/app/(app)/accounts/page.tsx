@@ -31,7 +31,7 @@ export default async function LoansPage() {
 
   return (
     <>
-      <PageHeader title="Loans" subtitle={`${rows.length} loan accounts`} />
+      <PageHeader title="Accounts" subtitle={`${rows.length} rental accounts`} />
       <DataTable
         filename="loans"
         columns={[
@@ -47,7 +47,7 @@ export default async function LoansPage() {
         rows={rows.map(({ loan, customer }) => {
           const balance = balances.get(loan.id) ?? 0;
           return {
-            href: `/loans/${loan.id}`,
+            href: `/accounts/${loan.id}`,
             cells: {
               contract: loan.contractNumber,
               customer: customer.name,
