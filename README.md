@@ -49,7 +49,8 @@ customers, with assets, PPSR registrations, schedules, DDRs, ~40,000 ledger
 transactions, ~50 accounts in arrears and open collections workflows. The
 generator is deterministic — rerunning after a reset produces the same book.
 
-The script also writes `supabase-scale-deals-part1..4.sql`: **additive** files
+The script also writes `supabase-scale-deals-part1..16.sql`: **additive** files
+(each under the Supabase SQL Editor's ~1MB query limit)
 that load the identical book into a live Supabase database (run each part in
 order in the SQL Editor). All generated rows use ids above 100000, so existing
 data is untouched. To remove the scale data later:

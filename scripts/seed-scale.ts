@@ -813,7 +813,8 @@ async function main() {
     }
   }
 
-  const MAX_PART_BYTES = 3_400_000;
+  // The Supabase SQL Editor rejects queries over ~1MB, so keep parts well under.
+  const MAX_PART_BYTES = 700_000;
   const parts: string[][] = [[]];
   let size = 0;
   for (const statement of statements) {
