@@ -49,18 +49,12 @@ customers, with assets, PPSR registrations, schedules, DDRs, ~40,000 ledger
 transactions, ~50 accounts in arrears and open collections workflows. The
 generator is deterministic — rerunning after a reset produces the same book.
 
-The script also writes `supabase-scale-deals-part1..16.sql`: **additive** files
-(each under the Supabase SQL Editor's ~1MB query limit)
-that load the identical book into a live Supabase database (run each part in
-order in the SQL Editor). All generated rows use ids above 100000, so existing
-data is untouched. To remove the scale data later:
-
-```sql
-DELETE FROM audit_log WHERE id > 100000;   -- then the same for: workflow_items, workflows,
--- ppsr_events, ppsr_registrations, direct_debit_authorities, transactions, loan_schedules,
--- application_checklist_items, application_assets, assets, loans, applications,
--- insurance_policies, customer_contacts, customers (in that order)
-```
+On the live site the same book is loaded from **Staff → Test data → “Load test
+book”** (admin only) — the app inserts it directly into the database, since the
+Supabase SQL Editor rejects queries this large. All generated rows use ids
+above 100000, so existing data is untouched, and **“Remove test book”** deletes
+the fake records again (including anything later attached to them) while
+leaving real data alone. Both live in `src/lib/scale-book.ts`.
 
 `node scripts/perf.mjs` (with the app running) prints page-load timings — useful
 after loading the scale book.
