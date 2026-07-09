@@ -78,6 +78,7 @@ export function DataTable({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [showAll, setShowAll] = useState(false);
 
   const filterOptions = useMemo(() => {
     const options: Record<string, string[]> = {};
@@ -92,8 +93,9 @@ export function DataTable({
     return options;
   }, [rows, filters]);
 
-  // Rendering thousands of rows at once makes the page seconds slower; the
-  // filter, sorting and CSV export still work across the full set.
+  // Rendering thousands of rows at once makes the page seconds slower, so by
+  // default only the first RENDER_CAP are drawn (filter, sorting and CSV export
+  // still work across the full set). "Show all" lifts the cap on demand.
   const RENDER_CAP = 250;
 
   const visible = useMemo(() => {
@@ -172,8 +174,17 @@ export function DataTable({
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-slate-500">
             {visible.length} of {rows.length}
-            {visible.length > RENDER_CAP && ` — showing first ${RENDER_CAP}, filter to narrow`}
+            {visible.length > RENDER_CAP && !showAll && ` — showing first ${RENDER_CAP}`}
           </span>
+          {visible.length > RENDER_CAP && (
+            <button
+              type="button"
+              onClick={() => setShowAll((s) => !s)}
+              className="btn-secondary text-xs"
+            >
+              {showAll ? `Show first ${RENDER_CAP}` : `Show all ${visible.length}`}
+            </button>
+          )}
           <button type="button" onClick={exportCsv} className="btn-secondary text-xs">
             Export CSV
           </button>
@@ -203,7 +214,7 @@ export function DataTable({
                 </td>
               </tr>
             )}
-            {visible.slice(0, RENDER_CAP).map((row, i) => (
+            {(showAll ? visible : visible.slice(0, RENDER_CAP)).map((row, i) => (
               <tr
                 key={i}
                 className={`border-b border-slate-100 last:border-0 ${row.href ? "cursor-pointer hover:bg-ygg-50" : ""}`}
