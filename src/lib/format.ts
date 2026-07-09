@@ -11,6 +11,14 @@ export function formatMoney(cents: number | null | undefined): string {
   return audFormatter.format(cents / 100);
 }
 
+/** Like formatMoney, but large amounts compact to "$221.6M" for stat cards. */
+export function formatMoneyCompact(cents: number | null | undefined): string {
+  if (cents == null) return "—";
+  const dollars = cents / 100;
+  if (Math.abs(dollars) >= 10_000_000) return `$${(dollars / 1_000_000).toFixed(1)}M`;
+  return audFormatter.format(dollars);
+}
+
 export function formatDate(isoDate: string | null | undefined): string {
   if (!isoDate) return "—";
   const [y, m, d] = isoDate.slice(0, 10).split("-");

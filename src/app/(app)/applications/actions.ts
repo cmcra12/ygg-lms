@@ -26,9 +26,16 @@ import { openWorkflowAs } from "../workflowActions";
 import type { ActionState } from "@/components/FormFrame";
 
 async function nextApplicationReference(): Promise<string> {
-  const [latest] = await db.select().from(applications).orderBy(desc(applications.id)).limit(1);
+  // Continue from the highest existing reference number (not the row id, which
+  // jumps once bulk demo data with high explicit ids is loaded).
+  const refs = await db.select({ reference: applications.reference }).from(applications);
+  let max = 0;
+  for (const { reference } of refs) {
+    const match = /^APP-\d{4}-(\d+)$/.exec(reference);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
   const year = todaySydney().slice(0, 4);
-  return `APP-${year}-${String((latest?.id ?? 0) + 1).padStart(4, "0")}`;
+  return `APP-${year}-${String(max + 1).padStart(4, "0")}`;
 }
 
 function intOrNull(raw: FormDataEntryValue | null): number | null {

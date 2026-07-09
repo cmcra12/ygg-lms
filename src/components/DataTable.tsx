@@ -92,6 +92,10 @@ export function DataTable({
     return options;
   }, [rows, filters]);
 
+  // Rendering thousands of rows at once makes the page seconds slower; the
+  // filter, sorting and CSV export still work across the full set.
+  const RENDER_CAP = 250;
+
   const visible = useMemo(() => {
     let out = rows;
     const q = filter.trim().toLowerCase();
@@ -168,6 +172,7 @@ export function DataTable({
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-slate-500">
             {visible.length} of {rows.length}
+            {visible.length > RENDER_CAP && ` — showing first ${RENDER_CAP}, filter to narrow`}
           </span>
           <button type="button" onClick={exportCsv} className="btn-secondary text-xs">
             Export CSV
@@ -198,7 +203,7 @@ export function DataTable({
                 </td>
               </tr>
             )}
-            {visible.map((row, i) => (
+            {visible.slice(0, RENDER_CAP).map((row, i) => (
               <tr
                 key={i}
                 className={`border-b border-slate-100 last:border-0 ${row.href ? "cursor-pointer hover:bg-ygg-50" : ""}`}

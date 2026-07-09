@@ -25,7 +25,7 @@ export default async function CollectionsAccountPage({
   const [customer] = await db.select().from(customers).where(eq(customers.id, loan.customerId));
 
   const [balanceRow] = await db
-    .select({ balance: sql<number>`coalesce(sum(${transactions.amountExGstCents}), 0)::int` })
+    .select({ balance: sql<number>`coalesce(sum(${transactions.amountExGstCents}), 0)::float8` })
     .from(transactions)
     .where(eq(transactions.loanId, loanId));
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, assets, customers, insurancePolicies, loans, transactions } from "@/db/schema";
-import { formatDate, formatMoney, todaySydney } from "@/lib/format";
+import { formatDate, formatMoney, formatMoneyCompact, todaySydney } from "@/lib/format";
 import { PageHeader, Section, Badge } from "@/components/ui";
 
 function StatCard({ label, value, href, alert }: { label: string; value: string; href: string; alert?: boolean }) {
@@ -36,8 +36,8 @@ export default async function DashboardPage() {
   ).length;
 
   const [portfolio] = await db
-    // sum() over integers is bigint in Postgres — cast so the driver returns a number
-    .select({ total: sql<number>`coalesce(sum(${assets.valueExGstCents}), 0)::int` })
+    // sum() over integers is bigint in Postgres — cast to float8 so the driver returns a number without overflowing int4 on a large book
+    .select({ total: sql<number>`coalesce(sum(${assets.valueExGstCents}), 0)::float8` })
     .from(assets)
     .where(eq(assets.status, "active"))
     ;
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
       ),
     )
     .orderBy(insurancePolicies.expiryDate)
-    ;
+    .limit(16);
 
   const recent = await db
     .select({ txn: transactions, loan: loans, customer: customers })
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
         <StatCard label="In arrears" value={String(arrearsLoans)} href="/accounts" alert={arrearsLoans > 0} />
         <StatCard label="Active customers" value={String(activeCustomers)} href="/customers" />
         <StatCard label="Active assets" value={String(activeAssets)} href="/assets" />
-        <StatCard label="Asset value (ex GST)" value={formatMoney(portfolio?.total ?? 0)} href="/assets" />
+        <StatCard label="Asset value (ex GST)" value={formatMoneyCompact(portfolio?.total ?? 0)} href="/assets" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

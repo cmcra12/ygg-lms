@@ -19,8 +19,8 @@ export default async function LoansPage() {
     const sums = await db
       .select({
         loanId: transactions.loanId,
-        // sum() over integers is bigint in Postgres — cast so the driver returns a number
-        balance: sql<number>`coalesce(sum(${transactions.amountExGstCents}), 0)::int`,
+        // sum() over integers is bigint in Postgres — cast to float8 so the driver returns a number without overflowing int4 on a large book
+        balance: sql<number>`coalesce(sum(${transactions.amountExGstCents}), 0)::float8`,
       })
       .from(transactions)
       .where(inArray(transactions.loanId, loanIds))

@@ -41,6 +41,29 @@ Seeded logins (all use password `yellowgate` — change them in Staff after firs
 `npm run db:reset` drops the local database and re-runs migrate + seed.
 For production: `npm run build && npm start`.
 
+### Scale test data — 1,600 fake deals
+
+`npm run db:seed-scale` (run after a normal seed) loads a full book on top of the
+demo data: ~1,600 converted deals (contracts YGG51650–YGG53249) across ~780
+customers, with assets, PPSR registrations, schedules, DDRs, ~40,000 ledger
+transactions, ~50 accounts in arrears and open collections workflows. The
+generator is deterministic — rerunning after a reset produces the same book.
+
+The script also writes `supabase-scale-deals-part1..4.sql`: **additive** files
+that load the identical book into a live Supabase database (run each part in
+order in the SQL Editor). All generated rows use ids above 100000, so existing
+data is untouched. To remove the scale data later:
+
+```sql
+DELETE FROM audit_log WHERE id > 100000;   -- then the same for: workflow_items, workflows,
+-- ppsr_events, ppsr_registrations, direct_debit_authorities, transactions, loan_schedules,
+-- application_checklist_items, application_assets, assets, loans, applications,
+-- insurance_policies, customer_contacts, customers (in that order)
+```
+
+`node scripts/perf.mjs` (with the app running) prints page-load timings — useful
+after loading the scale book.
+
 ## Production: Supabase + a Node host
 
 The database lives in **Supabase** (managed Postgres); the Next.js app itself runs on

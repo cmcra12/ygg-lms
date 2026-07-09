@@ -20,7 +20,7 @@ export default async function CollectionsPage() {
     const sums = await db
       .select({
         loanId: transactions.loanId,
-        balance: sql<number>`coalesce(sum(${transactions.amountExGstCents}), 0)::int`,
+        balance: sql<number>`coalesce(sum(${transactions.amountExGstCents}), 0)::float8`,
       })
       .from(transactions)
       .where(inArray(transactions.loanId, loanIds))
