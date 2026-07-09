@@ -396,6 +396,45 @@ export const ppsrEvents = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Workflows — instances of the templates in src/lib/workflows.ts, attached to
+// an application (origination) or an account (collections / payout / returns).
+// ---------------------------------------------------------------------------
+
+export const workflows = pgTable(
+  "workflows",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    templateKey: text("template_key").notNull(), // origination | collections | payout | returns
+    description: text("description").notNull(), // template name at time of opening
+    entityType: text("entity_type", { enum: ["application", "account"] }).notNull(),
+    entityId: integer("entity_id").notNull(),
+    status: text("status", { enum: ["open", "complete", "cancelled"] }).notNull().default("open"),
+    allocatedTo: integer("allocated_to").references(() => users.id),
+    openedBy: integer("opened_by").references(() => users.id),
+    openedAt: text("opened_at").notNull(),
+    completedAt: text("completed_at"),
+  },
+  (t) => [index("workflows_entity_idx").on(t.entityType, t.entityId)],
+);
+
+export const workflowItems = pgTable(
+  "workflow_items",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    workflowId: integer("workflow_id").notNull().references(() => workflows.id),
+    position: integer("position").notNull(),
+    key: text("key").notNull(),
+    label: text("label").notNull(),
+    kind: text("kind", { enum: ["task", "approval", "auto"] }).notNull().default("task"),
+    note: text("note"),
+    status: text("status", { enum: ["pending", "done", "skipped"] }).notNull().default("pending"),
+    actionedBy: integer("actioned_by").references(() => users.id),
+    actionedAt: text("actioned_at"),
+  },
+  (t) => [index("workflow_items_workflow_idx").on(t.workflowId)],
+);
+
+// ---------------------------------------------------------------------------
 // Searches — PPSR, Equifax (title / name browse / credit) and court data.
 // Every search run is saved here, linked to the customer it was run for.
 // ---------------------------------------------------------------------------

@@ -22,6 +22,7 @@ import { assertCan } from "@/lib/rbac";
 import { parseMoneyToCents, todaySydney } from "@/lib/format";
 import { DEFAULT_CHECKLIST } from "@/lib/checklist";
 import { creditBureau, idVerification, infoAgent, ppsr } from "@/integrations";
+import { openWorkflowAs } from "../workflowActions";
 import type { ActionState } from "@/components/FormFrame";
 
 async function nextApplicationReference(): Promise<string> {
@@ -138,6 +139,8 @@ export async function saveApplication(
         status: "pending",
       });
     }
+    // Every new application opens its Origination workflow automatically.
+    await openWorkflowAs(user, "origination", "application", id);
   } else {
     const [existing] = await db.select().from(applications).where(eq(applications.id, id));
     if (!existing) return { error: "Application not found." };

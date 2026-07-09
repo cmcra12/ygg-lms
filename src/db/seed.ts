@@ -8,6 +8,7 @@ import { auditedInsert, type Actor } from "./mutate";
 import { hashPassword } from "../lib/password";
 import { isValidAbn, isValidAcn } from "../lib/abn";
 import { DEFAULT_CHECKLIST } from "../lib/checklist";
+import { WORKFLOW_TEMPLATES } from "../lib/workflows";
 
 const SEED_ACTOR: Actor = { id: null, name: "System (seed)" };
 const now = () => new Date().toISOString();
@@ -376,6 +377,7 @@ const deals: DealSeed[] = [
 
 // Demo loans sit just below the live YGG51600+ contract series.
 let contractSeq = 51591;
+let arrearsLoanId: number | null = null;
 let appSeq = 1;
 
 for (const deal of deals) {
@@ -412,6 +414,8 @@ for (const deal of deals) {
     createdAt: now(),
     updatedAt: now(),
   });
+
+  if (deal.arrears) arrearsLoanId = loan.id;
 
   for (const assetSeed of deal.assets) {
     const asset = await insert<{ id: number }>(t.assets, "asset", {
@@ -643,6 +647,7 @@ const openApplicationSeeds = [
   },
 ];
 
+const openApplicationIds: number[] = [];
 for (const seed of openApplicationSeeds) {
   const customer = customers[seed.customerIdx];
   const application = await insert<{ id: number }>(t.applications, "application", {
@@ -667,6 +672,7 @@ for (const seed of openApplicationSeeds) {
     createdAt: now(),
     updatedAt: now(),
   });
+  openApplicationIds.push(application.id);
   if (seed.status === "in_progress") {
     await insert(t.applicationApplicants, "application_applicant", {
       applicationId: application.id,
@@ -728,6 +734,49 @@ for (const seed of openApplicationSeeds) {
   }
 }
 
+// --- Workflows -----------------------------------------------------------------
+
+async function seedWorkflow(
+  templateKey: string,
+  entityType: "application" | "account",
+  entityId: number,
+  doneSteps: number,
+) {
+  const template = WORKFLOW_TEMPLATES[templateKey];
+  const workflow = await insert<{ id: number }>(t.workflows, "workflow", {
+    templateKey,
+    description: template.name,
+    entityType,
+    entityId,
+    status: "open",
+    allocatedTo: credit.id,
+    openedBy: credit.id,
+    openedAt: now(),
+  });
+  for (const [i, step] of template.steps.entries()) {
+    await insert(t.workflowItems, "workflow_item", {
+      workflowId: workflow.id,
+      position: i + 1,
+      key: step.key,
+      label: step.label,
+      kind: step.kind,
+      note: step.note ?? null,
+      status: i < doneSteps ? "done" : "pending",
+      actionedBy: i < doneSteps ? credit.id : null,
+      actionedAt: i < doneSteps ? now() : null,
+    });
+  }
+}
+
+// Origination workflow mid-flight on each open application.
+for (const [i, applicationId] of openApplicationIds.entries()) {
+  await seedWorkflow("origination", "application", applicationId, i === 0 ? 2 : 5);
+}
+// Collections workflow on the account in arrears.
+if (arrearsLoanId != null) {
+  await seedWorkflow("collections", "account", arrearsLoanId, 2);
+}
+
 // --- Saved searches ------------------------------------------------------------
 
 const searchSeeds = [
@@ -762,6 +811,7 @@ const counts = {
   transactions: (await db.select().from(t.transactions)).length,
   ppsr: (await db.select().from(t.ppsrRegistrations)).length,
   searches: (await db.select().from(t.searches)).length,
+  workflows: (await db.select().from(t.workflows)).length,
   auditEntries: (await db.select().from(t.auditLog)).length,
 };
 console.log("Seed complete:", counts);

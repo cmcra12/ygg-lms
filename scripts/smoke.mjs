@@ -136,6 +136,27 @@ check(
 await page.goto(appUrlBase + "?tab=documents");
 check("CA recorded on application", (await page.textContent("body")).includes("CA-APP-2026-"));
 
+// Workflows tab: origination workflow with actionable current step
+await page.goto(appUrlBase + "?tab=workflows");
+const wfTab = await page.textContent("body");
+check("workflows tab", wfTab.includes("Origination") && wfTab.includes("Allocated to"));
+await page.click('button[title="Action this step"]');
+await page.waitForTimeout(1500);
+const wfAfter = await page.textContent("body");
+check("workflow step actioned", wfAfter.includes("3 of 17 items"));
+
+// Collections: arrears account listed with its workflow
+await page.goto(BASE + "/collections");
+const collections = await page.textContent("body");
+check("collections list", collections.includes("YGG51594") && collections.includes("Collections workflow"));
+await page.click("text=YGG51594");
+await page.waitForURL(/\/collections\/\d+$/);
+const collDetail = await page.textContent("body");
+check(
+  "collections workflow board",
+  collDetail.includes("Arrears identified") && collDetail.includes("Open Payout workflow"),
+);
+
 // Convert the approved application into a loan account
 await page.goto(BASE + "/applications");
 await page.click("text=APP-2026-0011");

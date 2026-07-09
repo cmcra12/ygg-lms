@@ -35,6 +35,8 @@ const TABLES: PgTable[] = [
   t.ppsrRegistrations,
   t.ppsrEvents,
   t.searches,
+  t.workflows,
+  t.workflowItems,
   t.auditLog,
 ];
 

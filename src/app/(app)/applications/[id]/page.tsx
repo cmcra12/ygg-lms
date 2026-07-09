@@ -20,6 +20,9 @@ import { PageHeader, Section, Badge, DetailList, LinkButton } from "@/components
 import { AuditTrail } from "@/components/AuditTrail";
 import { DeleteButton } from "@/components/DeleteButton";
 import { ConvertForm } from "../ConvertForm";
+import { WorkflowBoard } from "@/components/WorkflowBoard";
+import { loadWorkflows } from "../../workflowActions";
+import { APPLICATION_TEMPLATES } from "@/lib/workflows";
 import {
   convertApplication,
   deleteApplicant,
@@ -70,10 +73,10 @@ export default async function ApplicationDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; wf?: string }>;
 }) {
   const { id } = await params;
-  const { tab: rawTab } = await searchParams;
+  const { tab: rawTab, wf } = await searchParams;
   const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "key-details";
 
   const applicationId = Number(id);
@@ -112,6 +115,8 @@ export default async function ApplicationDetailPage({
     .select()
     .from(documents)
     .where(and(eq(documents.entityType, "application"), eq(documents.entityId, applicationId)));
+
+  const workflowEntries = await loadWorkflows("application", applicationId);
 
   const editable = application.status !== "converted";
   const tabHref = (key: string) => `/applications/${application.id}?tab=${key}`;
@@ -161,6 +166,11 @@ export default async function ApplicationDetailPage({
             {t.key === "applicants" && applicants.length > 0 && (
               <span className="ml-1.5 rounded-full bg-ygg-400 px-1.5 text-[10px] font-bold text-slate-900">
                 {applicants.length}
+              </span>
+            )}
+            {t.key === "workflows" && workflowEntries.some((e) => e.workflow.status === "open") && (
+              <span className="ml-1.5 rounded-full bg-ygg-400 px-1.5 text-[10px] font-bold text-slate-900">
+                {workflowEntries.filter((e) => e.workflow.status === "open").length}
               </span>
             )}
           </Link>
@@ -468,17 +478,32 @@ export default async function ApplicationDetailPage({
       )}
 
       {tab === "workflows" && (
-        <Section title="Workflows">
-          <div className="card p-8 text-center">
-            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-ygg-400" />
-            <h3 className="text-base font-semibold text-slate-800">Workflows are coming</h3>
-            <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
-              This tab will hold the origination workflows — status change rules, monitor categories
-              and step-by-step processing like finPOWER&apos;s Workflows screen. The layout is ready for
-              the workflow definitions to be configured.
-            </p>
-          </div>
-        </Section>
+        <WorkflowBoard
+          entries={workflowEntries}
+          selectedId={wf ? Number(wf) : undefined}
+          makeHref={(wfId) => `/applications/${application.id}?tab=workflows&wf=${wfId}`}
+          revalidate={`/applications/${application.id}`}
+          userNames={completedBy}
+          startable={APPLICATION_TEMPLATES}
+          entityType="application"
+          entityId={application.id}
+          editable={editable}
+          summary={{
+            title: "Application",
+            rows: [
+              ["Code", application.reference],
+              [
+                "Name",
+                <Link key="c" href={`/customers/${customer.id}`} className="text-ygg-700 underline">
+                  {(application.tradingName ?? customer.name).toUpperCase()}
+                </Link>,
+              ],
+              ["Type", "RENT-RC, Rent Now, Buy Later"],
+              ["Status", titleCase(application.status)],
+              ["Customer", customer.name],
+            ],
+          }}
+        />
       )}
 
       {tab === "history" && <AuditTrail entityType="application" entityId={application.id} />}
