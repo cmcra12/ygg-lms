@@ -448,8 +448,12 @@ export const searches = pgTable(
     type: text("type", {
       enum: ["ppsr", "equifax_title", "equifax_name", "equifax_credit", "court"],
     }).notNull(),
+    // Method within a provider — e.g. title: name|title|address|lot_plan|document;
+    // PPSR: motor_vehicle|organisation_grantor|…; court: name|company.
+    subtype: text("subtype"),
     customerId: integer("customer_id").references(() => customers.id),
-    subject: text("subject").notNull(), // what was searched: name, VIN, address, company…
+    subject: text("subject").notNull(), // human summary of what was searched
+    params: text("params"), // JSON of the full structured form input
     result: text("result"), // summary of the provider response (stub or manual entry)
     reference: text("reference"), // provider reference number
     notes: text("notes"),

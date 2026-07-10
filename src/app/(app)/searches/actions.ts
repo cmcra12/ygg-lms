@@ -16,10 +16,49 @@ function providerReference(prefix: string): string {
   return `${prefix}-${Math.floor(Math.random() * 900000) + 100000}`;
 }
 
-// Runs the search against the stub provider for its type and saves the result
-// against the customer. Real PPSR/Equifax/court APIs replace the stub branches
-// via src/integrations without changing this screen.
-async function runProvider(type: SearchType, subject: string): Promise<{ result: string; reference: string }> {
+// Control fields that describe the request rather than being search inputs.
+const CONTROL_FIELDS = new Set(["type", "customerId", "notes", "subtype"]);
+
+// A short human summary of what was searched, from the tailored fields.
+function composeSubject(type: SearchType, subtype: string, p: Record<string, string>): string {
+  const nameOf = (first?: string, last?: string) => [first, last].filter(Boolean).join(" ").trim();
+  const withState = (s: string) => (p.state ? `${s} (${p.state})` : s);
+  switch (type) {
+    case "equifax_title":
+      switch (subtype) {
+        case "name":
+          return withState(p.company || nameOf(p.firstName, p.surname));
+        case "title":
+          return withState(`Title ${p.titleReference ?? ""}`.trim());
+        case "address":
+          return withState(
+            [p.unit, p.streetNumber, p.streetName, p.suburb, p.postcode].filter(Boolean).join(" "),
+          );
+        case "lot_plan":
+          return withState(`Lot ${p.lot ?? ""} Plan ${p.plan ?? ""}`.trim());
+        case "document":
+          return withState([p.documentType, p.documentNumber].filter(Boolean).join(" "));
+      }
+      return withState("Title search");
+    case "equifax_name":
+      return nameOf(p.givenName, [p.middleName, p.surname].filter(Boolean).join(" "));
+    case "equifax_credit":
+      return subtype === "company" ? p.companyName ?? "" : nameOf(p.firstName, p.surname);
+    case "court":
+      return subtype === "company" ? withState(p.companyCaseTitle ?? "") : withState(nameOf(p.givenName, p.surname));
+    case "ppsr":
+      if (p.serialNumber) return p.serialNumber;
+      if (p.registrationNumber) return p.registrationNumber;
+      if (p.organisationName) return p.organisationName;
+      if (p.grantorSurname || p.grantorGivenName) return nameOf(p.grantorGivenName, p.grantorSurname);
+      return SEARCH_TYPES.ppsr.label;
+  }
+}
+
+async function runProvider(
+  type: SearchType,
+  subject: string,
+): Promise<{ result: string; reference: string }> {
   switch (type) {
     case "ppsr": {
       const response = await ppsr.search({ serialNumber: subject });
@@ -62,9 +101,18 @@ export async function runSearch(_prev: ActionState, formData: FormData): Promise
 
   const type = String(formData.get("type") ?? "") as SearchType;
   if (!SEARCH_TYPES[type]) return { error: "Choose a search type." };
+  const subtype = String(formData.get("subtype") ?? "").trim() || null;
 
-  const subject = String(formData.get("subject") ?? "").trim();
-  if (!subject) return { error: `${SEARCH_TYPES[type].subjectLabel} is required.` };
+  // Collect the tailored fields into a params object (skip control + empties).
+  const params: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    if (CONTROL_FIELDS.has(key)) continue;
+    const v = String(value).trim();
+    if (v) params[key] = v;
+  }
+
+  const subject = composeSubject(type, subtype ?? "", params).trim();
+  if (!subject) return { error: "Enter the search details." };
 
   const customerRaw = String(formData.get("customerId") ?? "");
   const customerId = customerRaw ? Number(customerRaw) : null;
@@ -76,8 +124,10 @@ export async function runSearch(_prev: ActionState, formData: FormData): Promise
   const { result, reference } = await runProvider(type, subject);
   await auditedInsert(user, searches, "search", {
     type,
+    subtype,
     customerId,
     subject,
+    params: Object.keys(params).length > 0 ? JSON.stringify(params) : null,
     result,
     reference,
     notes: String(formData.get("notes") ?? "").trim() || null,

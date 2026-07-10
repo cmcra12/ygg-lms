@@ -187,17 +187,25 @@ const newLoan = await page.textContent("body");
 check("convert to loan", newLoan.includes("YGG51600") && newLoan.includes("Assets on this account"));
 check("PMSI registered on convert", newLoan.includes("Atlas Copco"));
 
-// Searches: run an Equifax credit search saved to a customer
+// Searches: run a credit search (company mode) saved to a customer
 await page.goto(BASE + "/searches/new?type=equifax_credit");
 await page.selectOption('select[name="customerId"]', { label: "Redgum Haulage Pty Ltd" });
-await page.fill('input[name="subject"]', "Redgum Haulage Pty Ltd");
+await page.fill('input[name="companyName"]', "Redgum Haulage Pty Ltd");
 await page.click('main button[type="submit"]');
 await page.waitForURL(/\/customers\/\d+$/, { timeout: 15000 });
 const custAfterSearch = await page.textContent("body");
 check("search saved to customer", custAfterSearch.includes("Search history") && custAfterSearch.includes("Score 720"));
+// Land title search: tabbed methods (name / title / address / lot plan / document)
+await page.goto(BASE + "/searches/new?type=equifax_title&method=lot_plan");
+await page.fill('input[name="lot"]', "12");
+await page.fill('input[name="plan"]', "RP600123");
+await page.click('main button[type="submit"]');
+await page.waitForURL(/\/searches$/, { timeout: 15000 });
+const titleHistory = await page.textContent("body");
+check("land title lot/plan search", titleHistory.includes("Lot 12 Plan RP600123"));
 await page.goto(BASE + "/searches");
 const searchHistory = await page.textContent("body");
-check("search history page", searchHistory.includes("Equifax credit search") && searchHistory.includes("Redgum Haulage"));
+check("search history page", searchHistory.includes("Credit search") && searchHistory.includes("Redgum Haulage"));
 
 // RBAC: operations user doesn't get the Staff admin link
 const ctx2 = await browser.newContext();

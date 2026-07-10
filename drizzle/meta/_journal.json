@@ -50,6 +50,13 @@
       "when": 1783645292371,
       "tag": "0006_groovy_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783648768348,
+      "tag": "0007_faithful_sabra",
+      "breakpoints": true
     }
   ]
 }
