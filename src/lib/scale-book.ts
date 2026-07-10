@@ -239,6 +239,19 @@ const INDUSTRIES: Array<{ industry: string; weight: number; trades: string[]; ca
 ];
 const INDUSTRY_POOL = INDUSTRIES.flatMap((i) => Array<typeof i>(i.weight).fill(i));
 
+// ROI is typically 21–27%, varying by the kind of asset/industry.
+const ROI_BY_INDUSTRY: Record<string, number> = {
+  "Civil & Construction": 23,
+  "Heavy Haulage": 24,
+  "Transport & Logistics": 22,
+  "Trades & Services": 25,
+  Mining: 26,
+  Earthmoving: 23.5,
+  Agriculture: 22.5,
+  Forestry: 24.5,
+  "Waste & Recycling": 25.5,
+};
+
 // --- Generator -------------------------------------------------------------------
 
 function mulberry32(seed: number) {
@@ -257,6 +270,14 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
   const rint = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
   const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)];
   const chance = (p: number) => rand() < p;
+
+  // Rental rate is 5% most of the time (occasionally a little either side);
+  // ROI is 21–27%, centred on the industry.
+  const rollRr = () => (chance(0.8) ? 5 : 4.5 + rand() * 1.5);
+  const rollRoi = (industry: string) => {
+    const centre = ROI_BY_INDUSTRY[industry] ?? 24;
+    return Math.min(27, Math.max(21, centre + (rand() - 0.5) * 1.5));
+  };
 
   // Date helpers — local calendar, ISO strings like the rest of the app.
   const TODAY = new Date();
@@ -486,7 +507,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
     const totalValue = dealAssets.reduce((s, a) => s + a.value, 0);
 
     // Monthly rent from the rental rate; ex-GST cents everywhere.
-    const rr = 2.2 + rand() * 1.2;
+    const rr = rollRr();
     const rentCents = Math.round((totalValue * rr) / 100 / 10) * 10 * 100;
     const dwCents = chance(0.4) ? Math.round((rentCents * 0.05) / 100) * 100 : 0;
 
@@ -502,7 +523,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
       ownerId: CREDIT_USER,
       dealValueExGstCents: totalValue * 100,
       rentalRatePercent: rr.toFixed(2),
-      roiPercent: (10.5 + rand() * 4).toFixed(2),
+      roiPercent: rollRoi(spec.industry.industry).toFixed(2),
       termMonths: term,
       brokerageExGstCents: spec.brokerId != null ? Math.round(totalValue * 0.03) * 100 : null,
       tradingName: spec.customerName.replace(" Pty Ltd", ""),
@@ -854,7 +875,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
     const template = pick(industry.catalogue);
     const assetYear = TODAY.getFullYear() - rint(0, 3);
     const assetValue = Math.round(rint(template.lo, template.hi) / 500) * 500;
-    const rr = 2.2 + rand() * 1.2;
+    const rr = rollRr();
 
     const applicationId = add("applications", {
       reference: `APP-${applied.getFullYear()}-${9001 + j}`,
@@ -865,7 +886,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
       ownerId: CREDIT_USER,
       dealValueExGstCents: assetValue * 100,
       rentalRatePercent: rr.toFixed(2),
-      roiPercent: (10.5 + rand() * 4).toFixed(2),
+      roiPercent: rollRoi(industry.industry).toFixed(2),
       termMonths: 12,
       brokerageExGstCents: Math.round(assetValue * 0.03) * 100,
       tradingName: name.replace(" Pty Ltd", ""),

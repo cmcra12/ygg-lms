@@ -13,15 +13,18 @@ export function FormFrame({
   submitLabel,
   cancelHref,
   children,
+  maxWidth = "max-w-3xl",
 }: {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   submitLabel: string;
   cancelHref?: string;
   children: React.ReactNode;
+  /** Tailwind max-width for the form card. Wider forms pass e.g. "max-w-5xl". */
+  maxWidth?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   return (
-    <form action={formAction} className="card max-w-3xl space-y-4 p-5">
+    <form action={formAction} className={`card ${maxWidth} space-y-5 p-6`}>
       {state.error && (
         <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {state.error}

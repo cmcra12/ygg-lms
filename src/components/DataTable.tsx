@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // The one list component for the whole app. Every list screen gets sorting,
@@ -78,7 +78,10 @@ export function DataTable({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [showAll, setShowAll] = useState(false);
+  // Page size is capped at 250 rows for performance; pick 50/100/250 per page.
+  const PAGE_SIZES = [50, 100, 250] as const;
+  const [pageSize, setPageSize] = useState<number>(50);
+  const [page, setPage] = useState(0);
 
   const filterOptions = useMemo(() => {
     const options: Record<string, string[]> = {};
@@ -92,11 +95,6 @@ export function DataTable({
     }
     return options;
   }, [rows, filters]);
-
-  // Rendering thousands of rows at once makes the page seconds slower, so by
-  // default only the first RENDER_CAP are drawn (filter, sorting and CSV export
-  // still work across the full set). "Show all" lifts the cap on demand.
-  const RENDER_CAP = 250;
 
   const visible = useMemo(() => {
     let out = rows;
@@ -122,6 +120,16 @@ export function DataTable({
     }
     return out;
   }, [rows, columns, filter, columnFilters, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const currentPage = Math.min(page, totalPages - 1);
+  const start = currentPage * pageSize;
+  const paged = visible.slice(start, start + pageSize);
+
+  // Snap back to the first page whenever filtering/sizing changes the result set.
+  useEffect(() => {
+    setPage(0);
+  }, [filter, columnFilters, pageSize]);
 
   function toggleSort(key: string) {
     if (sortKey === key) {
@@ -173,18 +181,24 @@ export function DataTable({
         })}
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-slate-500">
-            {visible.length} of {rows.length}
-            {visible.length > RENDER_CAP && !showAll && ` — showing first ${RENDER_CAP}`}
+            {visible.length === rows.length
+              ? `${visible.length} ${visible.length === 1 ? "row" : "rows"}`
+              : `${visible.length} of ${rows.length}`}
           </span>
-          {visible.length > RENDER_CAP && (
-            <button
-              type="button"
-              onClick={() => setShowAll((s) => !s)}
-              className="btn-secondary text-xs"
+          <label className="flex items-center gap-1.5 text-xs text-slate-500">
+            Show
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="w-auto rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm transition-colors focus:border-ygg-500 focus:outline-none focus:ring-2 focus:ring-ygg-400/40"
             >
-              {showAll ? `Show first ${RENDER_CAP}` : `Show all ${visible.length}`}
-            </button>
-          )}
+              {PAGE_SIZES.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
           <button type="button" onClick={exportCsv} className="btn-secondary text-xs">
             Export CSV
           </button>
@@ -214,7 +228,7 @@ export function DataTable({
                 </td>
               </tr>
             )}
-            {(showAll ? visible : visible.slice(0, RENDER_CAP)).map((row, i) => (
+            {paged.map((row, i) => (
               <tr
                 key={i}
                 className={`border-b border-slate-100 last:border-0 ${row.href ? "cursor-pointer hover:bg-ygg-50" : ""}`}
@@ -245,6 +259,50 @@ export function DataTable({
           </tbody>
         </table>
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-slate-200 px-4 py-2.5 text-xs text-slate-500">
+          <span>
+            Showing {start + 1}–{Math.min(start + pageSize, visible.length)} of {visible.length}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPage(0)}
+              disabled={currentPage === 0}
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              « First
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              ‹ Prev
+            </button>
+            <span className="px-2 tabular-nums">
+              Page {currentPage + 1} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={currentPage >= totalPages - 1}
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next ›
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage(totalPages - 1)}
+              disabled={currentPage >= totalPages - 1}
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Last »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

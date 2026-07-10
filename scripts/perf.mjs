@@ -44,7 +44,7 @@ for (const [label, path] of targets) {
 await page.goto(BASE + "/accounts", { waitUntil: "load" });
 let t0 = Date.now();
 await page.fill('input[type="search"]', "YGG529");
-await page.waitForFunction(() => document.body.innerText.includes("of 16"), null, { timeout: 30000 });
+await page.waitForFunction(() => document.body.innerText.includes("16 of"), null, { timeout: 30000 });
 console.log(`Accounts filter typing → results  ${Date.now() - t0}ms`);
 t0 = Date.now();
 await page.click('th:has-text("Balance")');

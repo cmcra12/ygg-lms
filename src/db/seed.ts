@@ -393,8 +393,9 @@ for (const deal of deals) {
     brokerId: deal.brokerIdx != null ? brokers[deal.brokerIdx].id : null,
     ownerId: credit.id,
     dealValueExGstCents: totalValue * 100,
-    rentalRatePercent: (2.2 + deal.customerIdx * 0.13).toFixed(2),
-    roiPercent: (11.5 + deal.customerIdx * 0.4).toFixed(2),
+    // Rental rate is 5%; ROI sits in the 21–27% band by asset type.
+    rentalRatePercent: "5.00",
+    roiPercent: (22 + (deal.customerIdx % 6)).toFixed(2),
     termMonths: deal.termMonths,
     brokerageExGstCents: deal.brokerIdx != null ? Math.round(totalValue * 0.03) * 100 : null,
     createdAt: now(),
@@ -618,8 +619,8 @@ const openApplicationSeeds = [
     status: "in_progress" as const,
     brokerIdx: 2,
     dealValue: 152000,
-    rr: "2.85",
-    roi: "12.90",
+    rr: "5.00",
+    roi: "24.50",
     termMonths: 12,
     asset: {
       description: "2024 Tigercat 632H Skidder",
@@ -634,8 +635,8 @@ const openApplicationSeeds = [
     status: "approved" as const,
     brokerIdx: 0,
     dealValue: 118000,
-    rr: "3.05",
-    roi: "13.40",
+    rr: "5.00",
+    roi: "26.00",
     termMonths: 12,
     asset: {
       description: "2023 Atlas Copco XAS 188 Air Compressor Package",
