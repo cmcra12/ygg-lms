@@ -79,7 +79,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
               ),
             ],
             [
-              "Current loan",
+              "Current rental account",
               loan ? (
                 <Link href={`/accounts/${loan.id}`} className="text-ygg-700 underline">
                   {loan.contractNumber}

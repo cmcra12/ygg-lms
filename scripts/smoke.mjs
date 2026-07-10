@@ -79,7 +79,7 @@ check("industry filter", filtered.includes("Sandvik") && !filtered.includes("Cat
 await page.goto(BASE + "/search?q=XT29GH");
 check("global search rego", (await page.textContent("body")).includes("Kenworth"));
 await page.goto(BASE + "/search?q=YGG51594");
-check("global search contract", (await page.textContent("body")).includes("Loan"));
+check("global search contract", (await page.textContent("body")).includes("Rental account"));
 
 // External parties
 await page.goto(BASE + "/external-parties");
@@ -181,7 +181,7 @@ check("collections comments", true);
 await page.goto(BASE + "/applications");
 await page.click("text=APP-2026-0011");
 await page.waitForURL(/\/applications\/\d+$/);
-await page.click('button:has-text("Open loan account")');
+await page.click('button:has-text("Open rental account")');
 await page.waitForURL(/\/accounts\/\d+$/, { timeout: 20000 });
 const newLoan = await page.textContent("body");
 check("convert to loan", newLoan.includes("YGG51600") && newLoan.includes("Assets on this account"));

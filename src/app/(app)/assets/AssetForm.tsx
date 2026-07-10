@@ -101,7 +101,7 @@ export function AssetForm({
           </select>
         </div>
         <div>
-          <label className="field-label">Current loan</label>
+          <label className="field-label">Current rental account</label>
           <select
             name="loanId"
             defaultValue={initial.loanId != null ? String(initial.loanId) : ""}

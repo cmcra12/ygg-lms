@@ -14,7 +14,7 @@ export default async function LoginPage() {
             Yellow<span className="text-ygg-400">gate</span>
           </div>
           <p className="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-            Loan Management — internal use only
+            Rental Management — internal use only
           </p>
         </div>
         <LoginForm />

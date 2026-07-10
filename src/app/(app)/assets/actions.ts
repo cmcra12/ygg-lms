@@ -33,18 +33,18 @@ export async function saveAsset(
 
   if (loanId != null) {
     const [loan] = await db.select().from(loans).where(eq(loans.id, loanId));
-    if (!loan) return { error: "Selected loan not found." };
+    if (!loan) return { error: "Selected rental account not found." };
     if (customerId != null && loan.customerId !== customerId) {
-      return { error: "Selected loan belongs to a different customer." };
+      return { error: "Selected rental account belongs to a different customer." };
     }
-    // Assets may only move to a different loan after the previous one finished.
+    // Assets may only move to a different rental account after the previous one finished.
     if (assetId != null) {
       const [current] = await db.select().from(assets).where(eq(assets.id, assetId));
       if (current?.loanId && current.loanId !== loanId) {
         const [previous] = await db.select().from(loans).where(eq(loans.id, current.loanId));
         if (previous && previous.status === "active") {
           return {
-            error: `Asset is attached to active loan ${previous.contractNumber} — it can only be reassigned once that loan has finished.`,
+            error: `Asset is attached to active rental account ${previous.contractNumber} — it can only be reassigned once that rental account has finished.`,
           };
         }
       }

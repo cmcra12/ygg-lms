@@ -69,7 +69,7 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
         }
       />
 
-      <Section title="Facility">
+      <Section title="Rental details">
         <DetailList
           items={[
             ["Start date", formatDate(loan.startDate)],
@@ -159,7 +159,7 @@ export default async function LoanDetailPage({ params }: { params: Promise<{ id:
               running: { text: formatMoney(t.running), sort: t.running },
             },
           }))}
-          emptyMessage="No transactions on this loan."
+          emptyMessage="No transactions on this rental account."
         />
       </Section>
 

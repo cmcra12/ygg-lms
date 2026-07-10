@@ -23,7 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <span className="block text-xl font-bold tracking-tight text-white">
             <span className="text-ygg-400">YGG</span> LMS
           </span>
-          <span className="block text-xs text-zinc-500">Yellowgate Loan Management</span>
+          <span className="block text-xs text-zinc-500">Yellowgate Rental Management</span>
         </Link>
         <div className="border-b border-zinc-800/80 px-3 pb-4">
           <div className="px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-600">

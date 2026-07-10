@@ -7,6 +7,10 @@ import { formatDateTime, titleCase } from "@/lib/format";
 import { PageHeader } from "@/components/ui";
 import { DataTable } from "@/components/DataTable";
 
+// Friendly labels for stored entity types (the "loan" table is a rental account).
+const ENTITY_LABEL: Record<string, string> = { loan: "Rental account" };
+const entityLabel = (t: string) => ENTITY_LABEL[t] ?? titleCase(t);
+
 export default async function AuditLogPage() {
   const user = await requireUser();
   assertCan(user, "audit:view");
@@ -36,7 +40,7 @@ export default async function AuditLogPage() {
               text: titleCase(e.action),
               badge: e.action === "delete" ? "red" : e.action === "create" ? "green" : "blue",
             },
-            entity: `${titleCase(e.entityType)} #${e.entityId}`,
+            entity: `${entityLabel(e.entityType)} #${e.entityId}`,
             detail: (e.after ?? e.before ?? "").slice(0, 120),
           },
         }))}

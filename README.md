@@ -1,15 +1,16 @@
-# YGG Loan Management System
+# YGG LMS — Yellowgate Rental Management
 
-Internal loan management for Yellowgate Group (YGG) — a stripped-back replacement for
-finPOWER Connect that does exactly what YGG uses and nothing more. Rental-only asset
-finance: the ledger is scheduled recurring charges (RENT, DAMAGE WAIVER, …) versus
-receipts. No interest accrual, no amortisation, no payout-figure engine.
+Internal rental management for Yellowgate Group (YGG) — a stripped-back replacement for
+finPOWER Connect that does exactly what YGG uses and nothing more. YGG is a rent-to-own
+(Rent Now, Buy Later) business, not a finance company: the ledger is scheduled recurring
+charges (RENT, DAMAGE WAIVER, …) versus receipts. No interest accrual, no amortisation,
+no payout-figure engine.
 
 **Phases 1 and 2 of the four-phase plan are built.**
 
 - *Phase 1 — Foundation:* scaffold, schema, auth + RBAC, automatic audit trail,
   global search, customers (contacts + insurance), external parties, master asset
-  register, loans with read-only ledger, payment history drilldown, dashboard,
+  register, rental accounts with read-only ledger, payment history drilldown, dashboard,
   seed data and CSV export everywhere.
 - *Phase 2 — Originations:* applications with the deal snapshot (value, RR, ROI,
   term, brokerage), originations checklist with stubbed credit check / Info Agent /

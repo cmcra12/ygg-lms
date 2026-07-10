@@ -31,10 +31,10 @@ export function ConvertForm({
         </select>
       </div>
       <button type="submit" className="btn-primary" disabled={pending}>
-        {pending ? "Converting…" : "Open loan account"}
+        {pending ? "Converting…" : "Open rental account"}
       </button>
       <p className="w-full text-xs text-slate-500">
-        Creates the loan account, moves the assets onto it and registers the PMSI on each asset.
+        Creates the rental account, moves the assets onto it and registers the PMSI on each asset.
       </p>
     </form>
   );

@@ -135,7 +135,7 @@ export default async function ApplicationDetailPage({
               <>
                 {" "}
                 <Link href={`/accounts/${loan.id}`} className="text-ygg-700 underline">
-                  → Account {loan.contractNumber}
+                  → Rental account {loan.contractNumber}
                 </Link>
               </>
             )}
@@ -235,7 +235,7 @@ export default async function ApplicationDetailPage({
           </Section>
 
           {application.status === "approved" && !loan && (
-            <Section title="Open loan account">
+            <Section title="Open rental account">
               <ConvertForm
                 action={convertApplication.bind(null, application.id)}
                 defaultStartDate={todaySydney()}

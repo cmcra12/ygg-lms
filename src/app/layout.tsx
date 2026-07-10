@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Yellowgate LMS",
-  description: "Yellowgate Group internal loan management system",
+  description: "Yellowgate Group internal rental management system",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

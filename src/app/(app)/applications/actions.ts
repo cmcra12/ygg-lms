@@ -152,7 +152,7 @@ export async function saveApplication(
     const [existing] = await db.select().from(applications).where(eq(applications.id, id));
     if (!existing) return { error: "Application not found." };
     if (existing.status === "converted") {
-      return { error: "This application has been converted to a loan and can no longer be edited." };
+      return { error: "This application has been converted to a rental account and can no longer be edited." };
     }
     await auditedUpdate(user, applications, "application", id, values);
   }
@@ -481,7 +481,7 @@ export async function runPpsrSearch(applicationId: number): Promise<void> {
   revalidatePath(`/applications/${applicationId}`);
 }
 
-// --- Convert an approved application into a loan account ----------------------
+// --- Convert an approved application into a rental account --------------------
 
 // Contract numbers run sequentially in the YGG51600, YGG51601, … series.
 const CONTRACT_SERIES_START = 51599;
@@ -506,7 +506,7 @@ export async function convertApplication(
   const [application] = await db.select().from(applications).where(eq(applications.id, applicationId));
   if (!application) return { error: "Application not found." };
   if (application.status !== "approved") {
-    return { error: "Only approved applications can be converted to a loan account." };
+    return { error: "Only approved applications can be converted to a rental account." };
   }
   if (!application.termMonths) {
     return { error: "Set the minimum return (months) on the application before converting." };
@@ -528,7 +528,7 @@ export async function convertApplication(
       .where(and(inArray(loans.id, attachedLoanIds), eq(loans.status, "active")));
     if (activeLoans.length > 0) {
       return {
-        error: `Asset(s) still attached to active loan ${activeLoans[0].contractNumber} — they can only be reassigned once it has finished.`,
+        error: `Asset(s) still attached to active rental account ${activeLoans[0].contractNumber} — they can only be reassigned once it has finished.`,
       };
     }
   }
@@ -603,6 +603,6 @@ export async function convertApplication(
   });
 
   revalidatePath("/applications");
-  revalidatePath("/loans");
+  revalidatePath("/accounts");
   redirect(`/accounts/${loan.id}`);
 }
