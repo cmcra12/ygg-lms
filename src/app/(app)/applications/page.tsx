@@ -34,6 +34,7 @@ export default async function ApplicationsPage() {
       />
       <DataTable
         filename="applications"
+        filters={["status", "source"]}
         columns={[
           { key: "reference", header: "Reference" },
           { key: "customer", header: "Customer" },

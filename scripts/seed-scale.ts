@@ -23,6 +23,7 @@ async function main() {
     `Deals: ${s.deals} (${s.active} active, ${s.paidOut} paid out, ${s.writtenOff} written off, ${s.arrears} in arrears)`,
   );
   console.log(`Contracts ${s.firstContract}–${s.lastContract}, customers ${s.customers}`);
+  console.log(`Open applications in the originations pipeline: ${s.openApplications}`);
   await closeDb();
 }
 

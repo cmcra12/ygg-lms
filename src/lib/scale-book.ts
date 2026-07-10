@@ -28,6 +28,7 @@ const TABLE_ORDER = [
   "customerContacts",
   "insurancePolicies",
   "applications",
+  "applicationApplicants",
   "loans",
   "assets",
   "applicationAssets",
@@ -47,6 +48,7 @@ const DRIZZLE_TABLES: Record<TableKey, PgTable> = {
   customerContacts: t.customerContacts,
   insurancePolicies: t.insurancePolicies,
   applications: t.applications,
+  applicationApplicants: t.applicationApplicants,
   loans: t.loans,
   assets: t.assets,
   applicationAssets: t.applicationAssets,
@@ -70,6 +72,7 @@ export type ScaleBook = {
     paidOut: number;
     writtenOff: number;
     arrears: number;
+    openApplications: number;
     firstContract: string;
     lastContract: string;
     counts: Record<TableKey, number>;
@@ -778,6 +781,202 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
     }
   }
 
+  // --- Open originations pipeline ------------------------------------------------
+  // A handful of applications still in flight, each with an origination workflow
+  // stopped at a different step, so the whole 17-step workflow is on show.
+  const originationTemplate = WORKFLOW_TEMPLATES.origination;
+  const totalSteps = originationTemplate.steps.length;
+  // status + how far the origination workflow has progressed.
+  const openPlan: Array<{ status: "draft" | "in_progress" | "approved"; done: number }> = [
+    { status: "draft", done: 1 },
+    { status: "draft", done: 2 },
+    { status: "in_progress", done: 4 },
+    { status: "in_progress", done: 6 },
+    { status: "in_progress", done: 7 },
+    { status: "in_progress", done: 9 },
+    { status: "in_progress", done: 10 },
+    { status: "in_progress", done: 12 },
+    { status: "in_progress", done: 13 },
+    { status: "approved", done: totalSteps - 2 },
+    { status: "approved", done: totalSteps - 1 },
+    { status: "approved", done: totalSteps - 1 },
+  ];
+  let openApplications = 0;
+  // Open-app references sit in a high band so they never collide with converted
+  // deals (…-2001+) or the base seed.
+  for (const [j, plan] of openPlan.entries()) {
+    const industry = pick(INDUSTRY_POOL);
+    let name: string;
+    do {
+      name = `${pick(PLACE_WORDS)} ${pick(industry.trades)} Pty Ltd`;
+    } while (usedNames.has(name));
+    usedNames.add(name);
+    const locality = pick(LOCALITIES);
+    const emailDomain = `${name.toLowerCase().replace(/ pty ltd$/, "").replace(/[^a-z0-9]/g, "")}.com.au`;
+    const applied = monthsBack(0, rint(1, 26)); // sometime in the last few weeks
+    const appliedStamp = stampOf(applied);
+
+    const customerId = add("customers", {
+      code: `C${2001 + customerCount}`,
+      name,
+      type: "company",
+      abn: makeAbn(),
+      acn: makeAcn(),
+      email: `accounts@${emailDomain}`,
+      phone: `04${rint(10, 99)} ${rint(100, 999)} ${rint(100, 999)}`,
+      addressLine1: `${rint(1, 220)} ${pick(STREETS)}`,
+      addressLine2: null,
+      suburb: locality.suburb,
+      state: locality.state,
+      postcode: locality.postcode,
+      status: "active",
+      notes: null,
+      createdAt: appliedStamp,
+      updatedAt: appliedStamp,
+    });
+    customerCount++;
+    audit("customer", customerId, { name }, appliedStamp);
+
+    const director = `${pick(FIRST_NAMES)} ${pick(SURNAMES)}`;
+    add("customerContacts", {
+      customerId,
+      kind: "director_guarantor",
+      name: director,
+      mobile: `04${rint(10, 99)} ${rint(100, 999)} ${rint(100, 999)}`,
+      email: `${director.split(" ")[0].toLowerCase()}@${emailDomain}`,
+      idVerificationStatus: plan.status === "draft" ? "pending" : "verified",
+      creditCheckStatus: plan.status === "draft" ? "pending" : "clear",
+      notes: null,
+      createdAt: appliedStamp,
+      updatedAt: appliedStamp,
+    });
+
+    const template = pick(industry.catalogue);
+    const assetYear = TODAY.getFullYear() - rint(0, 3);
+    const assetValue = Math.round(rint(template.lo, template.hi) / 500) * 500;
+    const rr = 2.2 + rand() * 1.2;
+
+    const applicationId = add("applications", {
+      reference: `APP-${applied.getFullYear()}-${9001 + j}`,
+      customerId,
+      status: plan.status,
+      source: chance(0.7) ? "broker" : "direct",
+      brokerId: chance(0.7) ? pick(BASE_BROKER_IDS) : null,
+      ownerId: CREDIT_USER,
+      dealValueExGstCents: assetValue * 100,
+      rentalRatePercent: rr.toFixed(2),
+      roiPercent: (10.5 + rand() * 4).toFixed(2),
+      termMonths: 12,
+      brokerageExGstCents: Math.round(assetValue * 0.03) * 100,
+      tradingName: name.replace(" Pty Ltd", ""),
+      entityType: "pty_ltd",
+      yearsTrading: rint(2, 25),
+      natureOfBusiness: industry.industry,
+      businessSuburb: locality.suburb,
+      businessState: locality.state,
+      businessPostcode: locality.postcode,
+      premises: chance(0.6) ? "rent" : "own",
+      employeesCount: rint(2, 60),
+      machinesInFleet: rint(1, 25),
+      createdAt: appliedStamp,
+      updatedAt: appliedStamp,
+    });
+    audit("application", applicationId, { reference: `APP-${applied.getFullYear()}-${9001 + j}` }, appliedStamp);
+    openApplications++;
+
+    // Applicant 1 (and sometimes a second) with an assets & liabilities snapshot.
+    const applicantCount = chance(0.5) ? 2 : 1;
+    for (let p = 1; p <= applicantCount; p++) {
+      const first = pick(FIRST_NAMES);
+      const last = p === 1 ? director.split(" ")[1] : pick(SURNAMES);
+      const assetsTotal = rint(45, 180) * 10000;
+      const liabilitiesTotal = Math.round(assetsTotal * (0.2 + rand() * 0.5));
+      add("applicationApplicants", {
+        applicationId,
+        position: p,
+        firstName: p === 1 ? director.split(" ")[0] : first,
+        surname: last,
+        dateOfBirth: `${1965 + rint(0, 25)}-${String(rint(1, 12)).padStart(2, "0")}-${String(rint(1, 28)).padStart(2, "0")}`,
+        gender: chance(0.5) ? "male" : "female",
+        yearsIndustryExperience: rint(3, 30),
+        driversLicenceNo: `${locality.state}${rint(100000, 999999)}`,
+        driversLicenceExpiry: isoDate(new Date(TODAY.getFullYear() + rint(1, 5), rint(0, 11), rint(1, 28))),
+        mobile: `04${rint(10, 99)} ${rint(100, 999)} ${rint(100, 999)}`,
+        email: `${(p === 1 ? director.split(" ")[0] : first).toLowerCase()}@${emailDomain}`,
+        homeAddressLine1: `${rint(1, 220)} ${pick(STREETS)}`,
+        homeSuburb: locality.suburb,
+        homeState: locality.state,
+        homePostcode: locality.postcode,
+        homeOwnership: chance(0.6) ? "own" : "renting",
+        privacyAcknowledged: plan.status !== "draft",
+        assetsDetail: `Family home, motor vehicles and business equity`,
+        liabilitiesDetail: `Home loan and business facilities`,
+        totalAssetsCents: assetsTotal * 100,
+        totalLiabilitiesCents: liabilitiesTotal * 100,
+        createdAt: appliedStamp,
+        updatedAt: appliedStamp,
+      });
+    }
+
+    const assetId = add("assets", {
+      description: `${assetYear} ${template.make} ${template.model}`,
+      category: template.category,
+      industry: industry.industry,
+      vin: template.kind === "vin" ? makeVin(template.make) : null,
+      rego: template.kind === "rego" ? makeRego() : null,
+      serialNumber: template.kind === "serial" ? makeSerial(template.make) : null,
+      valueExGstCents: assetValue * 100,
+      status: "active",
+      customerId,
+      loanId: null,
+      notes: null,
+      createdAt: appliedStamp,
+      updatedAt: appliedStamp,
+    });
+    add("applicationAssets", { applicationId, assetId });
+
+    // Checklist mirrors progress: done for approved, part-done in progress, open for draft.
+    for (const [ci, item] of DEFAULT_CHECKLIST.entries()) {
+      const itemDone =
+        plan.status === "approved" || (plan.status === "in_progress" && ci < Math.ceil(DEFAULT_CHECKLIST.length / 2));
+      add("applicationChecklistItems", {
+        applicationId,
+        key: item.key,
+        label: item.label,
+        status: itemDone ? "done" : "pending",
+        completedBy: itemDone ? CREDIT_USER : null,
+        completedAt: itemDone ? appliedStamp : null,
+        notes: itemDone && item.stub ? `${item.stub} check completed (stub)` : null,
+      });
+    }
+
+    // Origination workflow stopped at this plan's step.
+    const workflowId = add("workflows", {
+      templateKey: "origination",
+      description: originationTemplate.name,
+      entityType: "application",
+      entityId: applicationId,
+      status: "open",
+      allocatedTo: CREDIT_USER,
+      openedBy: CREDIT_USER,
+      openedAt: appliedStamp,
+      completedAt: null,
+    });
+    for (const [pos, step] of originationTemplate.steps.entries()) {
+      add("workflowItems", {
+        workflowId,
+        position: pos + 1,
+        key: step.key,
+        label: step.label,
+        kind: step.kind,
+        note: step.note ?? null,
+        status: pos < plan.done ? "done" : "pending",
+        actionedBy: pos < plan.done ? CREDIT_USER : null,
+        actionedAt: pos < plan.done ? appliedStamp : null,
+      });
+    }
+  }
+
   return {
     store,
     summary: {
@@ -787,6 +986,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
       paidOut: statusTally.paid_out,
       writtenOff: statusTally.written_off,
       arrears: arrearsCount,
+      openApplications,
       firstContract: `YGG${CONTRACT_START}`,
       lastContract: `YGG${CONTRACT_START + dealSpecs.length - 1}`,
       counts: Object.fromEntries(TABLE_ORDER.map((k) => [k, store[k].length])) as Record<TableKey, number>,
