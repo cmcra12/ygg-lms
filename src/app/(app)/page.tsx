@@ -5,7 +5,19 @@ import { applications, assets, customers, insurancePolicies, loans, transactions
 import { formatDate, formatMoney, formatMoneyCompact, todaySydney } from "@/lib/format";
 import { PageHeader, Section, Badge } from "@/components/ui";
 
-function StatCard({ label, value, href, alert }: { label: string; value: string; href: string; alert?: boolean }) {
+function StatCard({
+  label,
+  value,
+  href,
+  alert,
+  sub,
+}: {
+  label: string;
+  value: string;
+  href: string;
+  alert?: boolean;
+  sub?: string;
+}) {
   return (
     <Link
       href={href}
@@ -15,15 +27,27 @@ function StatCard({ label, value, href, alert }: { label: string; value: string;
       <div className={`mt-1 text-xl font-bold tabular-nums 2xl:text-2xl ${alert ? "text-red-600" : "text-slate-900"}`}>
         {value}
       </div>
+      {sub && <div className="mt-0.5 text-xs text-slate-500 tabular-nums">{sub}</div>}
     </Link>
   );
 }
 
 export default async function DashboardPage() {
-  const activeLoans = (await db.select({ id: loans.id }).from(loans).where(eq(loans.status, "active"))).length;
+  // Accounts by status, in one grouped query.
+  const statusRows = await db
+    .select({ status: loans.status, count: sql<number>`count(*)::int` })
+    .from(loans)
+    .groupBy(loans.status);
+  const byStatus = new Map(statusRows.map((r) => [r.status, r.count]));
+  const activeLoans = byStatus.get("active") ?? 0;
+  const paidOutLoans = byStatus.get("paid_out") ?? 0;
+  const writtenOffLoans = byStatus.get("written_off") ?? 0;
+  const totalLoans = activeLoans + paidOutLoans + writtenOffLoans;
   const arrearsLoans = (
     await db.select({ id: loans.id }).from(loans).where(and(eq(loans.status, "active"), eq(loans.arrears, true)))
   ).length;
+  const pctOfTotal = (n: number) => (totalLoans > 0 ? `${Math.round((n / totalLoans) * 100)}% of total` : "—");
+
   const activeCustomers = (
     await db.select({ id: customers.id }).from(customers).where(eq(customers.status, "active"))
   ).length;
@@ -70,13 +94,34 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader title="Dashboard" subtitle="Portfolio snapshot" />
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+        <StatCard label="Total accounts" value={String(totalLoans)} href="/accounts" />
         <StatCard label="Open applications" value={String(openApplications)} href="/applications" />
-        <StatCard label="Active accounts" value={String(activeLoans)} href="/accounts" />
-        <StatCard label="In arrears" value={String(arrearsLoans)} href="/accounts" alert={arrearsLoans > 0} />
         <StatCard label="Active customers" value={String(activeCustomers)} href="/customers" />
         <StatCard label="Active assets" value={String(activeAssets)} href="/assets" />
         <StatCard label="Asset value (ex GST)" value={formatMoneyCompact(portfolio?.total ?? 0)} href="/assets" />
+      </div>
+
+      <div className="mb-6">
+        <Section title={`Accounts breakdown — ${totalLoans} total`}>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <StatCard label="Active" value={String(activeLoans)} sub={pctOfTotal(activeLoans)} href="/accounts" />
+            <StatCard
+              label="In arrears"
+              value={String(arrearsLoans)}
+              sub={activeLoans > 0 ? `${Math.round((arrearsLoans / activeLoans) * 100)}% of active` : "—"}
+              href="/collections"
+              alert={arrearsLoans > 0}
+            />
+            <StatCard label="Paid out" value={String(paidOutLoans)} sub={pctOfTotal(paidOutLoans)} href="/accounts" />
+            <StatCard
+              label="Written off"
+              value={String(writtenOffLoans)}
+              sub={pctOfTotal(writtenOffLoans)}
+              href="/accounts"
+            />
+          </div>
+        </Section>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
