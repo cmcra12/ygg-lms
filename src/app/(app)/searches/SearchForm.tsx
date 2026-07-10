@@ -4,7 +4,6 @@ import { useState } from "react";
 import { FormFrame, type ActionState } from "@/components/FormFrame";
 import {
   SEARCH_TYPES,
-  SEARCH_TYPE_KEYS,
   TITLE_METHODS,
   PPSR_SEARCH_TYPES,
   PPSR_SERIAL_TYPES,
@@ -362,7 +361,9 @@ export function SearchForm({
   initialCustomerId?: number;
   customers: Array<{ id: number; name: string }>;
 }) {
-  const [type, setType] = useState<SearchType>(initialType);
+  // The search type is fixed once chosen from the Searches menu — switch by
+  // going back to the menu, not by changing it mid-form.
+  const type = initialType;
 
   return (
     <FormFrame action={action} submitLabel="Run search" cancelHref="/searches">
@@ -370,17 +371,9 @@ export function SearchForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="field-label">Search</label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as SearchType)}
-            className="field-input"
-          >
-            {SEARCH_TYPE_KEYS.map((key) => (
-              <option key={key} value={key}>
-                {SEARCH_TYPES[key].label}
-              </option>
-            ))}
-          </select>
+          <div className="field-input flex cursor-not-allowed items-center bg-slate-100 font-medium text-slate-700">
+            {SEARCH_TYPES[type].label}
+          </div>
         </div>
         <div>
           <label className="field-label">Customer (saved against their account)</label>
