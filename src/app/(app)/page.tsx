@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { applications, assets, customers, insurancePolicies, loans, transactions } from "@/db/schema";
 import { formatDate, formatMoney, formatMoneyCompact, todaySydney } from "@/lib/format";
 import { PageHeader, Section, Badge } from "@/components/ui";
+import { NotifyInsuranceButton } from "@/components/NotifyInsuranceButton";
 
 function StatCard({
   label,
@@ -103,7 +104,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mb-6">
-        <Section title={`Accounts breakdown — ${totalLoans} total`}>
+        <Section title="Accounts breakdown">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <StatCard label="Active" value={String(activeLoans)} sub={pctOfTotal(activeLoans)} href="/accounts" />
             <StatCard
@@ -159,19 +160,21 @@ export default async function DashboardPage() {
               </div>
             )}
             {expiringPolicies.map(({ policy, customer }) => (
-              <Link
-                key={policy.id}
-                href={`/customers/${customer.id}`}
-                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-ygg-50"
-              >
-                <span className="w-24 shrink-0 tabular-nums text-slate-500">
-                  {formatDate(policy.expiryDate)}
-                </span>
-                <span className="min-w-0 flex-1 truncate">
-                  {customer.name} · {policy.insurer} {policy.policyNumber}
-                </span>
-                <Badge color="amber">expiring</Badge>
-              </Link>
+              <div key={policy.id} className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-ygg-50">
+                <Link
+                  href={`/customers/${customer.id}`}
+                  className="flex min-w-0 flex-1 items-center gap-3"
+                >
+                  <span className="w-24 shrink-0 tabular-nums text-slate-500">
+                    {formatDate(policy.expiryDate)}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {customer.name} · {policy.insurer} {policy.policyNumber}
+                  </span>
+                  <Badge color="amber">expiring</Badge>
+                </Link>
+                <NotifyInsuranceButton policyId={policy.id} lastNotifiedAt={policy.lastNotifiedAt} />
+              </div>
             ))}
           </div>
         </Section>

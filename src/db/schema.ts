@@ -88,6 +88,8 @@ export const insurancePolicies = pgTable(
     policyNumber: text("policy_number").notNull(),
     expiryDate: text("expiry_date").notNull(),
     status: text("status", { enum: ["current", "expired", "cancelled"] }).notNull().default("current"),
+    // When a renewal reminder was last sent to the client (HubSpot).
+    lastNotifiedAt: text("last_notified_at"),
     notes: text("notes"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),

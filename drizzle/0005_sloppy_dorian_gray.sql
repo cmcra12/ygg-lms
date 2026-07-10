@@ -1,0 +1,1 @@
+ALTER TABLE "insurance_policies" ADD COLUMN "last_notified_at" text;

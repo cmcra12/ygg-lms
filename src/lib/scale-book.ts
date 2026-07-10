@@ -464,7 +464,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
       status = chance(0.985) ? "active" : "written_off";
     }
     // Arrears needs at least two billed cycles behind it to make sense.
-    const arrears = status === "active" && monthsSinceStart >= 2 && chance(0.06);
+    const arrears = status === "active" && monthsSinceStart >= 2 && chance(0.08);
     if (arrears) arrearsCount++;
     statusTally[status]++;
 
@@ -625,7 +625,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
 
     // Ledger: upfront at settlement, then a monthly cycle of charges/payments.
     // Paid-out deals settle in full; written-off deals stop paying, then stop;
-    // arrears deals miss their last two debits (one dishonour fee).
+    // arrears deals fall behind by a varying number of recent cycles.
     const monthsElapsed =
       status === "paid_out"
         ? term
@@ -633,6 +633,13 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
           ? Math.min(monthsSinceStart, rint(4, 9))
           : Math.min(monthsSinceStart, 24);
     const paymentsStop = status === "written_off" ? Math.max(1, monthsElapsed - rint(2, 3)) : Infinity;
+
+    // Arrears vary in how deep they run (1–4 recent cycles unpaid) and when the
+    // dishonour fee landed — so no two arrears ledgers look identical.
+    const arrearsMissed = arrears ? Math.min(rint(1, 4), monthsElapsed) : 0;
+    const arrearsFrom = arrears ? monthsElapsed - arrearsMissed : Infinity; // miss cycles m > arrearsFrom
+    const dishonourMonth = arrears ? arrearsFrom + rint(1, arrearsMissed) : -1; // fee on one missed cycle
+    const hasDishonourFee = arrears && chance(0.7);
 
     const upfrontCents = Math.round(rentCents * 1.5);
     const txn = (row: Row) => add("transactions", { loanId, createdBy: OPS_USER, createdAt: startStamp, ...row });
@@ -681,7 +688,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
           createdAt: cycleStamp,
         });
       }
-      const missed = (arrears && m > monthsElapsed - 2) || m > paymentsStop;
+      const missed = (arrears && m > arrearsFrom) || m > paymentsStop;
       if (!missed) {
         txn({
           date: cycleDate,
@@ -693,7 +700,7 @@ export function generateScaleBook(dealsWanted = 1600): ScaleBook {
           description: "Direct debit received",
           createdAt: cycleStamp,
         });
-      } else if (arrears && m === monthsElapsed) {
+      } else if (hasDishonourFee && m === dishonourMonth) {
         txn({
           date: cycleDate,
           type: "dishonour_fee",

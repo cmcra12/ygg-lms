@@ -30,7 +30,14 @@ await page.click('main button[type="submit"]');
 await page.waitForURL(BASE + "/", { timeout: 15000 });
 check("login → dashboard", true);
 const dash = await page.textContent("body");
-check("dashboard stats", dash.includes("Active accounts") && dash.includes("In arrears"));
+check(
+  "dashboard stats",
+  dash.includes("Total accounts") && dash.includes("Accounts breakdown") && dash.includes("In arrears"),
+);
+// Insurance notify → HubSpot (stub) marks the row notified
+await page.click('button:has-text("Notify")');
+await page.waitForSelector("text=Sent ✓", { timeout: 15000 });
+check("insurance notify (hubspot stub)", true);
 
 // Customers list
 await page.goto(BASE + "/customers");
