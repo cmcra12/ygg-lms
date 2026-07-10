@@ -163,6 +163,19 @@ check(
   "collections workflow board",
   collDetail.includes("Arrears identified") && collDetail.includes("Open Payout workflow"),
 );
+check(
+  "arrears breakdown",
+  collDetail.includes("Days since first missed invoice") && collDetail.includes("Missed invoices"),
+);
+// Comments tab: add a comment and see it saved
+await page.click('a:has-text("Comments")');
+await page.waitForSelector("text=No comments yet");
+const commentBox = page.locator("textarea");
+await commentBox.click();
+await commentBox.pressSequentially("Smoke test collections note.");
+await page.click('main button:has-text("Add comment")');
+await page.waitForSelector("text=Smoke test collections note.", { timeout: 15000 });
+check("collections comments", true);
 
 // Convert the approved application into a loan account
 await page.goto(BASE + "/applications");

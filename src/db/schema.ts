@@ -459,6 +459,22 @@ export const searches = pgTable(
   (t) => [index("searches_customer_idx").on(t.customerId), index("searches_type_idx").on(t.type)],
 );
 
+// Free-text comments/notes staff leave against an entity (e.g. a collections
+// case on an account). Distinct from the audit log, which is system-generated.
+export const comments = pgTable(
+  "comments",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    entityType: text("entity_type").notNull(), // account | application | customer
+    entityId: integer("entity_id").notNull(),
+    body: text("body").notNull(),
+    authorId: integer("author_id").references(() => users.id),
+    authorName: text("author_name").notNull(), // snapshot of the author's name
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [index("comments_entity_idx").on(t.entityType, t.entityId)],
+);
+
 // ---------------------------------------------------------------------------
 // Cross-cutting
 // ---------------------------------------------------------------------------

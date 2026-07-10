@@ -8,7 +8,14 @@ import { computeArrears } from "@/lib/arrears";
 import { ACCOUNT_TEMPLATES } from "@/lib/workflows";
 import { PageHeader, Section, Badge } from "@/components/ui";
 import { WorkflowBoard } from "@/components/WorkflowBoard";
+import { Comments } from "@/components/Comments";
 import { loadWorkflows } from "../../workflowActions";
+import { loadComments } from "../../commentsActions";
+
+const TABS = [
+  { key: "workflow", label: "Workflow" },
+  { key: "comments", label: "Comments" },
+] as const;
 
 // Account-level workflows (collections, payout, returns), finPOWER-style.
 export default async function CollectionsAccountPage({
@@ -16,10 +23,11 @@ export default async function CollectionsAccountPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ wf?: string }>;
+  searchParams: Promise<{ wf?: string; tab?: string }>;
 }) {
   const { id } = await params;
-  const { wf } = await searchParams;
+  const { wf, tab: rawTab } = await searchParams;
+  const tab = TABS.some((t) => t.key === rawTab) ? rawTab! : "workflow";
   const loanId = Number(id);
   const [loan] = await db.select().from(loans).where(eq(loans.id, loanId));
   if (!loan) notFound();
@@ -31,6 +39,8 @@ export default async function CollectionsAccountPage({
 
   const entries = await loadWorkflows("account", loanId);
   const userNames = new Map((await db.select().from(users)).map((u) => [u.id, u.name]));
+  const comments = await loadComments("account", loanId);
+  const tabHref = (key: string) => `/collections/${loanId}?tab=${key}`;
 
   return (
     <>
@@ -47,6 +57,39 @@ export default async function CollectionsAccountPage({
         }
       />
 
+      {/* finPOWER-style tab strip */}
+      <div className="mb-6 flex flex-wrap gap-1 border-b border-slate-300">
+        {TABS.map((t) => (
+          <Link
+            key={t.key}
+            href={tabHref(t.key)}
+            className={`rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${
+              tab === t.key
+                ? "border border-b-0 border-slate-300 bg-white font-semibold text-slate-900 shadow-sm"
+                : "text-slate-500 hover:bg-slate-200/70 hover:text-slate-800"
+            }`}
+          >
+            {t.label}
+            {t.key === "comments" && comments.length > 0 && (
+              <span className="ml-1.5 rounded-full bg-ygg-400 px-1.5 text-[10px] font-bold text-slate-900">
+                {comments.length}
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+
+      {tab === "comments" && (
+        <Comments
+          entityType="account"
+          entityId={loanId}
+          comments={comments}
+          revalidate={`/collections/${loanId}`}
+        />
+      )}
+
+      {tab === "workflow" && (
+      <>
       <div className="mb-6">
         <Section title="Arrears breakdown">
           <div className="card p-4">
@@ -124,7 +167,7 @@ export default async function CollectionsAccountPage({
       <WorkflowBoard
         entries={entries}
         selectedId={wf ? Number(wf) : undefined}
-        makeHref={(wfId) => `/collections/${loan.id}?wf=${wfId}`}
+        makeHref={(wfId) => `/collections/${loan.id}?tab=workflow&wf=${wfId}`}
         revalidate={`/collections/${loan.id}`}
         userNames={userNames}
         startable={ACCOUNT_TEMPLATES}
@@ -149,6 +192,8 @@ export default async function CollectionsAccountPage({
           ],
         }}
       />
+      </>
+      )}
     </>
   );
 }
