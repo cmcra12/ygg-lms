@@ -1,4 +1,4 @@
-// The "test book": ~1,600 generated fake deals used to exercise the LMS at a
+// The "test book": ~1,600 generated fake deals used to exercise the RMS at a
 // realistic portfolio size. Shared by the local script (npm run db:seed-scale)
 // and the admin "Load test book" button on the Staff screen, which loads it
 // straight into the live database — the Supabase SQL Editor rejects files this

@@ -52,7 +52,7 @@ export default async function UsersPage() {
           <div className="card p-4">
             <p className="text-sm text-slate-600">
               A generated book of ~1,600 fake deals (contracts YGG51650–YGG53249, ~780 customers,
-              full ledgers, arrears and collections workflows) for trying the LMS at real
+              full ledgers, arrears and collections workflows) for trying the RMS at real
               portfolio size. Loading takes up to a minute; removing it deletes only the fake
               records — everything you entered yourself stays.
             </p>

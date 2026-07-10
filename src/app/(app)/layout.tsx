@@ -21,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <aside className="flex w-60 shrink-0 flex-col bg-zinc-950 text-zinc-300">
         <Link href="/" className="block px-5 pt-5 pb-3">
           <span className="block text-xl font-bold tracking-tight text-white">
-            <span className="text-ygg-400">YGG</span> LMS
+            <span className="text-ygg-400">YGG</span> RMS
           </span>
           <span className="block text-xs text-zinc-500">Yellowgate Rental Management</span>
         </Link>

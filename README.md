@@ -1,4 +1,4 @@
-# YGG LMS — Yellowgate Rental Management
+# YGG RMS — Yellowgate Rental Management
 
 Internal rental management for Yellowgate Group (YGG) — a stripped-back replacement for
 finPOWER Connect that does exactly what YGG uses and nothing more. YGG is a rent-to-own
