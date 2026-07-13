@@ -207,6 +207,28 @@ await page.goto(BASE + "/searches");
 const searchHistory = await page.textContent("body");
 check("search history page", searchHistory.includes("Credit search") && searchHistory.includes("Redgum Haulage"));
 
+// Actions menu: record a payment against an account from anywhere
+await page.goto(BASE + "/");
+await page.click('button:has-text("Actions")');
+await page.click("text=Record a payment");
+const actionsModal = page.locator("div.inset-0");
+const acctInput = actionsModal.locator('input[placeholder="Contract number or customer name…"]');
+await acctInput.click();
+await acctInput.pressSequentially("YGG51591");
+await actionsModal.locator('button:has-text("YGG51591")').click();
+const amtInput = actionsModal.locator('input[placeholder="0.00"]');
+await amtInput.click();
+await amtInput.pressSequentially("1000.00");
+await page.getByRole("button", { name: "Record", exact: true }).click();
+await page.waitForSelector("text=Payment recorded", { timeout: 15000 });
+check("actions menu — record payment", true);
+await page.getByRole("button", { name: "Done" }).click();
+
+// Actions menu is hidden on the application form
+await page.goto(BASE + "/applications/new");
+await page.waitForSelector("text=This application is for");
+check("actions menu hidden on app form", (await page.locator('button:has-text("Actions")').count()) === 0);
+
 // RBAC: operations user doesn't get the Staff admin link
 const ctx2 = await browser.newContext();
 const p2 = await ctx2.newPage();

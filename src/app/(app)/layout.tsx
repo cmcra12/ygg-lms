@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { logout } from "@/app/login/actions";
 import { NavLink } from "@/components/NavLink";
+import { ActionsMenu } from "@/components/ActionsMenu";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -65,6 +66,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="min-w-0 flex-1 p-6 lg:p-8">{children}</main>
       </div>
+      <ActionsMenu />
     </div>
   );
 }
